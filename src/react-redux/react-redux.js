@@ -9,15 +9,23 @@ import PropTypes from 'prop-types';
 */
 
 
-/*connect 函数是一个高级组件（函数）：传入一个组件，返回一个新的组件*/
-export connect = (WrappedComponent) => {
+/*connect 是一个函数
+  1、每个传进去的组件需要 store 里面的数据都不一样的，
+     所以除了给高阶组件传入 Dumb 组件以外，还需要告诉高级组件我们需要什么数据，高阶组件才能正确地去取数据
+
+  2、connect 现在是接受一个参数 mapStateToProps，然后返回一个函数，这个返回的函数才是高阶组件
+*/
+export const connect = (mapStateToProps) => (WrappedComponent) => {
   class Connect extends Component {
     static contextTypes = {
       store: PropTypes.object
     }
 
     render () {
-      return <WrappedComponent />
+      const { store } = this.context;
+      /*这里的 store.getState() 才是实际参数*/
+      let stateProps = mapStateToProps(store.getState());
+      return <WrappedComponent {...stateProps} />
     }
   }
 
