@@ -4,7 +4,7 @@
 */
 /*一、函数的返回结果只依赖于它的参数*/
 const a = 1;
-const foo = (b) => a + b; /*函数的结果依赖外部变量a*/
+const foo = (b) => a + b; /*函数的结果依赖外部变量 a */
 foo(2);
 
 
@@ -13,7 +13,7 @@ foo(2);
 /*二、函数执行过程没有副作用*/
 const a = 1
 const foo = (obj, b) => {
-  obj.x = 2;
+  obj.x = 2;  /*函数的结果修改了外部变量 obj */
   return obj.x + b;
 };
 const counter = { x: 1 };

@@ -42,43 +42,65 @@ function createStore(state, stateChanger) {
   const getState = () => state;
   /*修改应用状态数据*/
   const dispatch = (action) => {
+    /*一、修改应用程序的状态*/
     stateChanger(state, action);
-    /*数据修改后自动执行的订阅函数*/
+    /*二、应用程序的状态修改后，自动执行的订阅函数*/
     listeners.forEach((listener) => listener());
   };
   return { getState, dispatch, subscribe };
 }
 /*创建 store 应用程序*/
 const store = createStore(appState, stateChanger);
+/*缓存旧的 state*/
+let oldState = store.getState();
 /*数据修改后自动执行的订阅函数*/
-store.subscribe(() => renderApp(store.getState()));
+store.subscribe(() => {
+  /*渲染前，应用程序最新 state*/
+  const newState = store.getState();
+  /*数据修改后自动执行的订阅函数*/
+  renderApp(newState, oldState);
+  /*渲染后，将新的 state 置为旧的 state*/
+  oldState = newState;
+});
 
 
 /**
- * [renderTitle 渲染 title ]
- * @param  {[Object]} title [修改的数据对象]
+ * [renderTitle 渲染 title]
+ * @param  {[Object]} newTitle [最新 title]
+ * @param  {[Object]} oldTitle [上一次 title]
  */
-function renderTitle(title) {
+function renderTitle(newTitle, oldTitle = {}) {
+  /*数据没有变化就不渲染了*/
+  if (newTitle === oldTitle) return;
+  console.log('render title...');
   const titleDOM = document.getElementById('title');
-  titleDOM.innerHTML = title.text;
-  titleDOM.style.color = title.color;
+  titleDOM.innerHTML = newTitle.text;
+  titleDOM.style.color = newTitle.color;
 }
 /**
  * [renderContent 渲染 content ]
- * @param  {[Object]} content [修改的数据对象]
+ * @param  {[Object]} newContent [最新 content]
+ * @param  {[Object]} oldContent [上一次 content]
  */
-function renderContent(content) {
+function renderContent(newContent, oldContent = {}) {
+  /*数据没有变化就不渲染了*/
+  if (newContent === oldContent) return;
+  console.log('render content...');
   const contentDOM = document.getElementById('content');
-  contentDOM.innerHTML = content.text;
-  contentDOM.style.color = content.color;
+  contentDOM.innerHTML = newContent.text;
+  contentDOM.style.color = newContent.color;
 }
 /**
  * [renderApp 主渲染函数]
- * @param  {[Object]} appState [应用状态]
+ * @param  {[Object]} newAppState [最新应用状态]
+ * @param  {[Object]} oldAppState [上一次应用状态]
  */
-function renderApp(appState) {
-  renderTitle(appState.title);
-  renderContent(appState.content);
+function renderApp(newAppState, oldAppState = {}) {
+  /*数据没有变化就不渲染了*/
+  if (newAppState === oldAppState) return;
+  console.log('render app...');
+  renderTitle(newAppState.title);
+  renderContent(newAppState.content);
 }
 
 
