@@ -21,11 +21,36 @@ export const connect = (mapStateToProps) => (WrappedComponent) => {
       store: PropTypes.object
     }
 
-    render () {
+    constructor() {
+      super();
+      /*用来保存需要传给被包装组件的所有的参数*/
+      this.state = { allProps: {} };
+    }
+
+    /*在 componentWillMount 初始化挂载之前就绑定订阅函数*/
+    componentWillMount() {
       const { store } = this.context;
+      /*调用 _updateProps 进行初始化*/
+      this._updateProps();
+      /*通过 store.subscribe 监听数据变化重新调用 _updateProps【即所有使用到 connect 生成的组件都将接收新的 props 触发更新渲染！！！！！！！！！！！！！！！！！！！！！】*/
+      store.subscribe(() => this._updateProps());
+    }
+
+    _updateProps() {
+      const { store } = this.context
       /*这里的 store.getState() 才是实际参数*/
-      let stateProps = mapStateToProps(store.getState());
-      return <WrappedComponent {...stateProps} />
+      let stateProps = mapStateToProps(store.getState(), this.props); /*额外传入给 connect 生成的组件传入 props，让获取数据更加灵活方便！！！！！！！！！！！！！！！！*/
+      this.setState({
+        /*整合普通的 props 和从 state 生成的 props*/
+        allProps: {
+          ...stateProps,
+          ...this.props
+        }
+      })
+    }
+
+    render() {
+      return <WrappedComponent {...this.state.allProps} />
     }
   }
 
