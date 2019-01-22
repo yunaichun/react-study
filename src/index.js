@@ -1,12 +1,40 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import './index.css';
-import App from './App';
-import * as serviceWorker from './serviceWorker';
+/*应用状态*/
+const appState = {
+  title: {
+    text: 'React.js 小书',
+    color: 'red',
+  },
+  content: {
+    text: 'React.js 小书内容',
+    color: 'blue'
+  }
+};
 
-ReactDOM.render(<App />, document.getElementById('root'));
+/**
+ * [renderApp 主渲染函数]
+ * @param  {[type]} appState [应用状态]
+ */
+function renderApp(appState) {
+  renderTitle(appState.title);
+  renderContent(appState.content);
+}
+/**
+ * [renderTitle 渲染title]
+ * @param  {[type]} title [应用状态]
+ */
+function renderTitle(title) {
+  const titleDOM = document.getElementById('title');
+  titleDOM.innerHTML = title.text;
+  titleDOM.style.color = title.color;
+}
+/**
+ * [renderContent 渲染content]
+ * @param  {[type]} content [应用状态]
+ */
+function renderContent(content) {
+  const contentDOM = document.getElementById('content');
+  contentDOM.innerHTML = content.text;
+  contentDOM.style.color = content.color;
+}
 
-// If you want your app to work offline and load faster, you can change
-// unregister() to register() below. Note this comes with some pitfalls.
-// Learn more about service workers: http://bit.ly/CRA-PWA
-serviceWorker.unregister();
+renderApp(appState);
