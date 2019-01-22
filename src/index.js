@@ -1,21 +1,23 @@
-/*应用状态*/
-const appState = {
-  title: {
-    text: 'React.js 小书',
-    color: 'red',
-  },
-  content: {
-    text: 'React.js 小书内容',
-    color: 'blue'
-  }
-};
 /**
- * [stateChanger 修改应用状态的专用方法 -> 通过 createStore 方法包转成 dispatch 函数]
+ * [reducer 纯函数：修改应用状态的专用方法 -> 通过 createStore 方法包转成 dispatch 函数]
  * @param  {[Object]} state  [应用状态]
  * @param  {[Object]} action [修改应用状态的指令：包括 type 和 payload]
  * @return {[Object]}        [返回最新的应用状态]
  */
-function stateChanger(state, action) {
+function reducer(state, action) {
+  /*应用初始状态*/
+  if (!state) {
+    return {
+      title: {
+        text: 'React.js 小书',
+        color: 'red',
+      },
+      content: {
+        text: 'React.js 小书内容',
+        color: 'blue'
+      }
+    }
+  }
   switch (action.type) {
     case 'UPDATE_TITLE_TEXT':
       /*构建新的对象并且返回*/
@@ -42,28 +44,31 @@ function stateChanger(state, action) {
 }
 /**
  * [createStore 创建 store 应用程序]
- * @param  {[Object]}   state        [应用状态]
- * @param  {[Function]} stateChanger [修改应用状态的 dispatch 方法]
+ * @param  {[Function]} reducer      [纯函数：封装成修改应用状态的 dispatch 方法]
  * @return {[Object]}                [返回一个对象：包含三个方法 getState、dispatch、subscribe]
  */
-function createStore(state, stateChanger) {
+function createStore(reducer) {
+  /*初始化 state！！！！！！！！*/
+  let state = null;
   /*subscribe 订阅的监听者*/
   const listeners = [];
-  /*数据修改后自动执行的订阅函数*/
+  /*一、数据修改后自动执行的订阅函数*/
   const subscribe = (listener) => listeners.push(listener);
-  /*获取应用状态数据*/
+  /*二、获取应用状态数据*/
   const getState = () => state;
-  /*修改应用状态数据*/
+  /*三、修改应用状态数据*/
   const dispatch = (action) => {
-    /*一、修改应用程序的状态：传入当前 state -> 生成新的 state -> 覆盖原对象*/
-    state = stateChanger(state, action);
-    /*二、应用程序的状态修改后，自动执行的订阅函数*/
+    /*1、修改应用程序的状态：传入当前 state -> 生成新的 state -> 覆盖原对象*/
+    state = reducer(state, action);
+    /*2、应用程序的状态修改后，自动执行的订阅函数*/
     listeners.forEach((listener) => listener());
   };
+  /*初始化 state！！！！！！*/
+  dispatch({});
   return { getState, dispatch, subscribe };
 }
 /*创建 store 应用程序*/
-const store = createStore(appState, stateChanger);
+const store = createStore(reducer);
 /*缓存旧的 state*/
 let oldState = store.getState();
 /*应用程序状态修改后：执行订阅函数*/
