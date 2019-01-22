@@ -55,8 +55,8 @@ function createStore(state, stateChanger) {
   const getState = () => state;
   /*修改应用状态数据*/
   const dispatch = (action) => {
-    /*一、修改应用程序的状态：覆盖原对象*/
-    state = stateChanger(state, action)
+    /*一、修改应用程序的状态：传入当前 state -> 生成新的 state -> 覆盖原对象*/
+    state = stateChanger(state, action);
     /*二、应用程序的状态修改后，自动执行的订阅函数*/
     listeners.forEach((listener) => listener());
   };
