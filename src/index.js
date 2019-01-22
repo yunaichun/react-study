@@ -9,25 +9,39 @@ const appState = {
     color: 'blue'
   }
 };
-
-
 /**
- * [dispatch 修改应用状态的专用方法：dispatch]
+ * [stateChanger 修改应用状态的专用方法 -> 通过 createStore 方法包转成 dispatch 函数]
+ * @param  {[Object]} state  [应用状态]
  * @param  {[Object]} action [修改应用状态的指令：包括 type 和 payload]
- * @return {[type]}          [返回最新的应用状态]
+ * @return {[Object]}        [返回最新的应用状态]
  */
-function dispatch(action) {
+function stateChanger(state, action) {
   switch (action.type) {
     case 'UPDATE_TITLE_TEXT':
-      appState.title.text = action.text
+      state.title.text = action.text
       break
     case 'UPDATE_TITLE_COLOR':
-      appState.title.color = action.color
+      state.title.color = action.color
       break
     default:
       break
   }
 }
+/**
+ * [createStore 创建 store 应用程序]
+ * @param  {[Object]}   state        [应用状态]
+ * @param  {[Function]} stateChanger [修改应用状态的 dispatch 方法]
+ * @return {[Object]}                [返回一个对象：包含两个方法 getState 和 dispatch]
+ */
+function createStore(state, stateChanger) {
+  // 获取应用状态数据
+  const getState = () => state
+  // 修改应用状态数据
+  const dispatch = (action) => stateChanger(state, action)
+  return { getState, dispatch }
+}
+/*创建 store 应用程序*/
+const store = createStore(appState, stateChanger)
 
 
 /**
@@ -59,10 +73,10 @@ function renderApp(appState) {
 
 
 /*首次渲染页面*/
-renderApp(appState);
+renderApp(store.getState());
 /*修改标题文本*/
-dispatch({ type: 'UPDATE_TITLE_TEXT', text: '《React.js 小书》' });
+store.dispatch({ type: 'UPDATE_TITLE_TEXT', text: '《React.js 小书》' });
 /*修改标题颜色*/
-dispatch({ type: 'UPDATE_TITLE_COLOR', color: 'blue' });
+store.dispatch({ type: 'UPDATE_TITLE_COLOR', color: 'blue' });
 /*把新的数据渲染到页面上*/
-renderApp(appState);
+renderApp(store.getState());
