@@ -42,8 +42,9 @@ export const connect = (mapStateToProps, mapDispatchToProps) => (WrappedComponen
       let stateProps = mapStateToProps 
         ? mapStateToProps(store.getState(), this.props) /*额外传入给 connect 生成的组件传入 props，让获取数据更加灵活方便！！！！！！！！！！！！！！！！*/
         : {}; /*防止 mapStateToProps 没有传入*/
+      /*这里的 store.dispatch 才是实际参数*/
       let dispatchProps = mapDispatchToProps
-        ? mapDispatchToProps(store.dispatch, this.props)
+        ? mapDispatchToProps(store.dispatch, this.props) /*额外传入给 connect 生成的组件传入 props，让获取数据更加灵活方便！！！！！！！！！！！！！！！！*/
         : {}; /*防止 mapDispatchToProps 没有传入*/
       this.setState({
         /*整合普通的 props 和从 state 生成的 props*/
