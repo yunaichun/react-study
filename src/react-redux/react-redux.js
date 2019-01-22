@@ -27,7 +27,7 @@ export const connect = (mapStateToProps) => (WrappedComponent) => {
       this.state = { allProps: {} };
     }
 
-    /*在 componentWillMount 初始化挂载之前就绑定订阅函数*/
+    /*在 componentWillMount 生命周期即subscribe订阅函数。如果 store 变化即重新设置当前组件的state！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！*/
     componentWillMount() {
       const { store } = this.context;
       /*调用 _updateProps 进行初始化*/
