@@ -18,13 +18,26 @@ const appState = {
 function stateChanger(state, action) {
   switch (action.type) {
     case 'UPDATE_TITLE_TEXT':
-      state.title.text = action.text;
-      break;
+      /*构建新的对象并且返回*/
+      return {
+        ...state,
+        title: {
+          ...state.title,
+          text: action.text
+        }
+      }
     case 'UPDATE_TITLE_COLOR':
-      state.title.color = action.color;
-      break;
+      /*构建新的对象并且返回*/
+      return {
+        ...state,
+        title: {
+          ...state.title,
+          color: action.color
+        }
+      };
     default:
-      break;
+      /*没有修改，返回原来的对象*/
+      return state;
   }
 }
 /**
@@ -42,8 +55,8 @@ function createStore(state, stateChanger) {
   const getState = () => state;
   /*修改应用状态数据*/
   const dispatch = (action) => {
-    /*一、修改应用程序的状态*/
-    stateChanger(state, action);
+    /*一、修改应用程序的状态：覆盖原对象*/
+    state = stateChanger(state, action)
     /*二、应用程序的状态修改后，自动执行的订阅函数*/
     listeners.forEach((listener) => listener());
   };
@@ -53,17 +66,29 @@ function createStore(state, stateChanger) {
 const store = createStore(appState, stateChanger);
 /*缓存旧的 state*/
 let oldState = store.getState();
-/*数据修改后自动执行的订阅函数*/
+/*应用程序状态修改后：执行订阅函数*/
 store.subscribe(() => {
-  /*渲染前，应用程序最新 state*/
+  /*渲染前：应用程序最新 state*/
   const newState = store.getState();
-  /*数据修改后自动执行的订阅函数*/
+  /*执行订阅函数*/
   renderApp(newState, oldState);
-  /*渲染后，将新的 state 置为旧的 state*/
+  /*渲染后：将新的 state 置为旧的 state*/
   oldState = newState;
 });
 
 
+/**
+ * [renderApp 主渲染函数]
+ * @param  {[Object]} newAppState [最新应用状态]
+ * @param  {[Object]} oldAppState [上一次应用状态]
+ */
+function renderApp(newAppState, oldAppState = {}) {
+  /*数据没有变化就不渲染了*/
+  if (newAppState === oldAppState) return;
+  console.log('render app...');
+  renderTitle(newAppState.title, oldAppState.title);
+  renderContent(newAppState.content, oldAppState.content);
+}
 /**
  * [renderTitle 渲染 title]
  * @param  {[Object]} newTitle [最新 title]
@@ -89,18 +114,6 @@ function renderContent(newContent, oldContent = {}) {
   const contentDOM = document.getElementById('content');
   contentDOM.innerHTML = newContent.text;
   contentDOM.style.color = newContent.color;
-}
-/**
- * [renderApp 主渲染函数]
- * @param  {[Object]} newAppState [最新应用状态]
- * @param  {[Object]} oldAppState [上一次应用状态]
- */
-function renderApp(newAppState, oldAppState = {}) {
-  /*数据没有变化就不渲染了*/
-  if (newAppState === oldAppState) return;
-  console.log('render app...');
-  renderTitle(newAppState.title);
-  renderContent(newAppState.content);
 }
 
 
