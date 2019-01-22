@@ -18,30 +18,40 @@ const appState = {
 function stateChanger(state, action) {
   switch (action.type) {
     case 'UPDATE_TITLE_TEXT':
-      state.title.text = action.text
-      break
+      state.title.text = action.text;
+      break;
     case 'UPDATE_TITLE_COLOR':
-      state.title.color = action.color
-      break
+      state.title.color = action.color;
+      break;
     default:
-      break
+      break;
   }
 }
 /**
  * [createStore 创建 store 应用程序]
  * @param  {[Object]}   state        [应用状态]
  * @param  {[Function]} stateChanger [修改应用状态的 dispatch 方法]
- * @return {[Object]}                [返回一个对象：包含两个方法 getState 和 dispatch]
+ * @return {[Object]}                [返回一个对象：包含三个方法 getState、dispatch、subscribe]
  */
 function createStore(state, stateChanger) {
-  // 获取应用状态数据
-  const getState = () => state
-  // 修改应用状态数据
-  const dispatch = (action) => stateChanger(state, action)
-  return { getState, dispatch }
+  /*subscribe 订阅的监听者*/
+  const listeners = [];
+  /*数据修改后自动执行的订阅函数*/
+  const subscribe = (listener) => listeners.push(listener);
+  /*获取应用状态数据*/
+  const getState = () => state;
+  /*修改应用状态数据*/
+  const dispatch = (action) => {
+    stateChanger(state, action);
+    /*数据修改后自动执行的订阅函数*/
+    listeners.forEach((listener) => listener());
+  };
+  return { getState, dispatch, subscribe };
 }
 /*创建 store 应用程序*/
-const store = createStore(appState, stateChanger)
+const store = createStore(appState, stateChanger);
+/*数据修改后自动执行的订阅函数*/
+store.subscribe(() => renderApp(store.getState()));
 
 
 /**
@@ -78,5 +88,3 @@ renderApp(store.getState());
 store.dispatch({ type: 'UPDATE_TITLE_TEXT', text: '《React.js 小书》' });
 /*修改标题颜色*/
 store.dispatch({ type: 'UPDATE_TITLE_COLOR', color: 'blue' });
-/*把新的数据渲染到页面上*/
-renderApp(store.getState());
