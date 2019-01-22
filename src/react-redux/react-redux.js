@@ -9,7 +9,7 @@ import PropTypes from 'prop-types';
 */
 
 
-/*connect 是一个函数
+/*connect 是一个函数：执行后返回一个高阶组件
   1、每个传进去的组件需要 store 里面的数据都不一样的，
      所以除了给高阶组件传入 Dumb 组件以外，还需要告诉高级组件我们需要什么数据，高阶组件才能正确地去取数据
 
@@ -62,4 +62,31 @@ export const connect = (mapStateToProps, mapDispatchToProps) => (WrappedComponen
   }
 
   return Connect;
+}
+
+/*Provider是一个容器组件:
+  1、它会把嵌套的内容原封不动作为自己的子组件渲染出来。
+  2、它还会把外界传给它的  props.store 放到 context，这样子组件 connect 的时候都可以获取到。
+*/
+export class Provider extends Component {
+  static propTypes = {
+    store: PropTypes.object,
+    children: PropTypes.any
+  }
+
+  static childContextTypes = {
+    store: PropTypes.object
+  }
+
+  getChildContext () {
+    return {
+      store: this.props.store
+    }
+  }
+
+  render () {
+    return (
+      <div>{this.props.children}</div>
+    )
+  }
 }

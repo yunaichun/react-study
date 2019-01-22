@@ -1,6 +1,7 @@
 /*一、引入 redux 实现的 demo*/
 import './redux-demo/index.js';
 
+
 /*二、引入 react-redux 实现的 demo*/
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
@@ -8,6 +9,7 @@ import ReactDOM from 'react-dom';
 import Header from './react-redux/components/Header';
 import Content from './react-redux/components/Content';
 import './index.css';
+import { Provider } from './react-redux/react-redux';
 
 
 /*reducer 纯函数*/
@@ -42,14 +44,6 @@ const store = createStore(themeReducer);
 
 
 class Index extends Component {
-  static childContextTypes = {
-    store: PropTypes.object
-  }
-  /*把 store 放到 Index 的 context 里面，这样每个子组件都可以获取到 store*/
-  getChildContext () {
-    return { store }
-  }
-
   render () {
     return (
       <div>
@@ -60,6 +54,8 @@ class Index extends Component {
   }
 };
 ReactDOM.render(
-  <Index />,
+  <Provider store={store}>
+    <Index />
+  </Provider>,
   document.getElementById('root')
 );
