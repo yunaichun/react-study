@@ -6,8 +6,8 @@ import './redux-demo/index.js';
 import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 import ReactDOM from 'react-dom';
-import Header from './react-redux/components/Header';
-import Content from './react-redux/components/Content';
+import Header from './react-redux/container/Header';
+import Content from './react-redux/container/Content';
 import './index.css';
 import { Provider } from './react-redux/react-redux';
 
