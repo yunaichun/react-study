@@ -286,6 +286,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
    * https://github.com/tc39/proposal-observable
    */
   function observable() {
+    /*将内部的 subscribe 订阅方法暴露出去*/
     const outerSubscribe = subscribe
     return {
       /**
@@ -297,21 +298,27 @@ export default function createStore(reducer, preloadedState, enhancer) {
        * emission of values from the observable.
        */
       subscribe(observer) {
+        /*observer 必须为对象*/
         if (typeof observer !== 'object' || observer === null) {
           throw new TypeError('Expected the observer to be an object.')
         }
 
         function observeState() {
+          /*observer 对象含有一个 next 方法*/
           if (observer.next) {
             observer.next(getState())
           }
         }
 
+        /*执行 observeState方法：执行 observer 对象上的 next 方法，传入 store 当前的 state*/
         observeState()
+        /*添加监听函数 observeState*/ 
         const unsubscribe = outerSubscribe(observeState)
+        /*返回取消监听函数*/
         return { unsubscribe }
       },
 
+      /*只是暴露出this，私有方法不对外暴露*/
       [$$observable]() {
         return this
       }
