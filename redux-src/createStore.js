@@ -29,6 +29,7 @@ import isPlainObject from './utils/isPlainObject'
  * and subscribe to changes.
  */
 export default function createStore(reducer, preloadedState, enhancer) {
+  // preloadedState + enhancer 均为函数 || preloadedState 不是函数 + enhancer 是函数 + 存在第四个参数
   if (
     (typeof preloadedState === 'function' && typeof enhancer === 'function') ||
     (typeof enhancer === 'function' && typeof arguments[3] === 'function')
@@ -40,11 +41,13 @@ export default function createStore(reducer, preloadedState, enhancer) {
     )
   }
 
+  /*preloadedState 参数没有传的情况*/
   if (typeof preloadedState === 'function' && typeof enhancer === 'undefined') {
     enhancer = preloadedState
     preloadedState = undefined
   }
 
+  /*enhancer 必须为函数*/
   if (typeof enhancer !== 'undefined') {
     if (typeof enhancer !== 'function') {
       throw new Error('Expected the enhancer to be a function.')
@@ -53,14 +56,20 @@ export default function createStore(reducer, preloadedState, enhancer) {
     return enhancer(createStore)(reducer, preloadedState)
   }
 
+  /*reducer 必须为函数*/
   if (typeof reducer !== 'function') {
     throw new Error('Expected the reducer to be a function.')
   }
 
+  /*当前 store 中的 reducer */
   let currentReducer = reducer
+  /*当前 store 中存储的状态*/
   let currentState = preloadedState
+  /*当前 store 中放置的监听函数*/
   let currentListeners = []
+  /*下一次 dispatch 时的监听函数。注意：当我们新添加一个监听函数时，只会在下一次 dispatch 的时候生效*/
   let nextListeners = currentListeners
+  /*标志位：是否当前在执行 dispatch 操作，默认为还没有被 dispatch*/
   let isDispatching = false
 
   /**
@@ -82,6 +91,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
    * @returns {any} The current state tree of your application.
    */
   function getState() {
+    /*正在被 dispatch 中，暂时无法获取当前状态*/
     if (isDispatching) {
       throw new Error(
         'You may not call store.getState() while the reducer is executing. ' +
@@ -89,7 +99,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
           'Pass it down from the top reducer instead of reading it from the store.'
       )
     }
-
+    /*返回当前 store 的状态：只读属性的*/
     return currentState
   }
 
@@ -117,10 +127,12 @@ export default function createStore(reducer, preloadedState, enhancer) {
    * @returns {Function} A function to remove this change listener.
    */
   function subscribe(listener) {
+    /*监听者必须是函数*/
     if (typeof listener !== 'function') {
       throw new Error('Expected the listener to be a function.')
     }
 
+    /*在当前还没有被 dispatch 是正确的*/
     if (isDispatching) {
       throw new Error(
         'You may not call store.subscribe() while the reducer is executing. ' +
@@ -130,16 +142,22 @@ export default function createStore(reducer, preloadedState, enhancer) {
       )
     }
 
+    /*设置一个标志，标志该监听器已经订阅了*/
     let isSubscribed = true
 
+    /*确保可以触发下一个监听者*/
     ensureCanMutateNextListeners()
+    /*nextListeners 添加新的监听者进来*/
     nextListeners.push(listener)
 
+    /*返回取消订阅的方法*/
     return function unsubscribe() {
+      /*一个 listener 只能被 unsubscribe 一次，重复执行也没有用*/
       if (!isSubscribed) {
         return
       }
 
+      /*在 dispatch 过程中不能进行 unsubscribe 操作*/
       if (isDispatching) {
         throw new Error(
           'You may not unsubscribe from a store listener while the reducer is executing. ' +
@@ -147,9 +165,12 @@ export default function createStore(reducer, preloadedState, enhancer) {
         )
       }
 
+      /*订阅标志复位*/
       isSubscribed = false
 
+      /*确保可以触发下一个监听者*/
       ensureCanMutateNextListeners()
+      /*获取当前 listener 的索引 同时移除当前的监听者*/
       const index = nextListeners.indexOf(listener)
       nextListeners.splice(index, 1)
     }
@@ -181,6 +202,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
    * return something else (for example, a Promise you can await).
    */
   function dispatch(action) {
+    /*action 参数必须是对象*/
     if (!isPlainObject(action)) {
       throw new Error(
         'Actions must be plain objects. ' +
@@ -188,6 +210,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
       )
     }
 
+    /*action 参数必须有 type 字段*/
     if (typeof action.type === 'undefined') {
       throw new Error(
         'Actions may not have an undefined "type" property. ' +
@@ -195,18 +218,24 @@ export default function createStore(reducer, preloadedState, enhancer) {
       )
     }
 
+    /*调用 dispatch 的时候只能一个个调用*/
     if (isDispatching) {
       throw new Error('Reducers may not dispatch actions.')
     }
 
     try {
+      /*执行 reducer 之前设置 isDispatching 标志位*/
       isDispatching = true
+      /*执行 reducer ，传入当前 state 和 action 参数*/
       currentState = currentReducer(currentState, action)
     } finally {
+      /*执行 reducer 之后将 isDispatching 标志位复位*/
       isDispatching = false
     }
 
+    /*设置当前 store 添加监听者之后的最新监听数组*/
     const listeners = (currentListeners = nextListeners)
+    /*执行所有的监听者*/
     for (let i = 0; i < listeners.length; i++) {
       const listener = listeners[i]
       listener()
