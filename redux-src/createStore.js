@@ -126,6 +126,10 @@ export default function createStore(reducer, preloadedState, enhancer) {
    * @param {Function} listener A callback to be invoked on every dispatch.
    * @returns {Function} A function to remove this change listener.
    */
+  /*主要做了两件事：
+    1、更新监听者数组
+    2、返回取消订阅函数
+  */
   function subscribe(listener) {
     /*监听者必须是函数*/
     if (typeof listener !== 'function') {
@@ -201,6 +205,10 @@ export default function createStore(reducer, preloadedState, enhancer) {
    * Note that, if you use a custom middleware, it may wrap `dispatch()` to
    * return something else (for example, a Promise you can await).
    */
+  /*主要做了两件事：
+    1、设置 store 当前 的 state
+    2、执行所有监听者
+  */
   function dispatch(action) {
     /*action 参数必须是对象*/
     if (!isPlainObject(action)) {
@@ -255,16 +263,19 @@ export default function createStore(reducer, preloadedState, enhancer) {
    * @returns {void}
    */
   function replaceReducer(nextReducer) {
+    /*nextReducer 必须为函数*/
     if (typeof nextReducer !== 'function') {
       throw new Error('Expected the nextReducer to be a function.')
     }
 
+    /*替换掉 currentReducer 为 nextReducer*/
     currentReducer = nextReducer
 
     // This action has a similiar effect to ActionTypes.INIT.
     // Any reducers that existed in both the new and old rootReducer
     // will receive the previous state. This effectively populates
     // the new state tree with any relevant data from the old one.
+    /*设置 store 当前 的 state + 执行所有监听者*/
     dispatch({ type: ActionTypes.REPLACE })
   }
 

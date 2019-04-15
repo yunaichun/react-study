@@ -13,8 +13,11 @@ const randomString = () =>
     .join('.')
 
 const ActionTypes = {
+  /*初始化 store 状态*/
   INIT: `@@redux/INIT${randomString()}`,
+  /*replaceReducer 方法*/
   REPLACE: `@@redux/REPLACE${randomString()}`,
+  /*未定义的 action*/
   PROBE_UNKNOWN_ACTION: () => `@@redux/PROBE_UNKNOWN_ACTION${randomString()}`
 }
 
