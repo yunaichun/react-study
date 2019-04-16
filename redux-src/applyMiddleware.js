@@ -26,11 +26,14 @@ import compose from './compose'
  * 
  * 四、使用
  * 1、let enhanceCreateStore = compose(
- *          applyMiddleware(reduxThunk),
+ *          applyMiddleware(thunk, promise, logger),
+ *          reduxRouter
  *        )(createStore);
- *    // enhanceCreateStore(reducers, initialState)
+ *    const store = enhanceCreateStore(reducers, initialState)
  * 
- * 2、applyMiddleware(thunkMiddleware)(createStore)(reducer, initialState)
+ * 2、const store = applyMiddleware(thunk)(createStore)(reducer, initialState)【等价于 1 的写法（1是添加了串联）】
+ *
+ * 3、const store = createStore(reducer, initial_state, applyMiddleware(thunk, promise, logger))【等价于 2 的写法（2是源码写法）】
  */
 export default function applyMiddleware(...middlewares) {
   /* 返回一个函数 A，函数 A 的参数是一个 createStore 函数。
