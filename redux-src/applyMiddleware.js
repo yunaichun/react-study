@@ -21,11 +21,17 @@ import compose from './compose'
  * 二、增强的具体方式是通过 compose 来构造一个 dispatch 链，链的具体形式就是 **[中间件1，中间件2, ......, 中间件N, store.dispatch]** ，
  *     然后将增强的 dispatch 作为 store 新的 dispatch 暴露给用户。
  * 三、那用户每次 dispatch 的时候，就会依次执行每个中间件，执行完当前的，会将执行权交给下一个，直到 reducer 中，计算出新的 state
+ * 四、使用
+ * let enhanceCreateStore = compose(
+ *   applyMiddleware(reduxThunk),
+ * )(createStore);
+ * // enhanceCreateStore(reducers, initialState)
 */
+ */
 export default function applyMiddleware(...middlewares) {
-  /*返回一个函数 A，函数 A 的参数是一个 createStore 函数。
-    函数 A 的返回值是函数 B，其实也就是一个加强后的 createStore 函数，大括号内的是函数 B 的函数体
-  */
+  /* 返回一个函数 A，函数 A 的参数是一个 createStore 函数。
+   * 函数 A 的返回值是函数 B，其实也就是一个加强后的 createStore 函数，大括号内的是函数 B 的函数体
+   */
   return createStore => (...args) => {
     /*用参数传进来的 createStore 创建一个 store*/
     const store = createStore(...args)
@@ -42,10 +48,14 @@ export default function applyMiddleware(...middlewares) {
       getState: store.getState,
       dispatch: (...args) => dispatch(...args)
     }
-    /*middlewares 是一个中间件函数数组，中间件函数的返回值是一个改造 dispatch 的函数
-    调用数组中的每个中间件函数，得到所有的改造函数*/
+    /* middlewares 是一个中间件函数数组
+     * 中间件函数的返回值是一个改造 dispatch 的函数！！！！
+     * 调用数组中的每个中间件函数，得到所有的改造函数
+     */
     const chain = middlewares.map(middleware => middleware(middlewareAPI))
-    /*将这些改造函数 compose（翻译：构成，整理成）成一个函数，用 compose 后的函数去改造 store 的 dispatch*/
+    /* 将这些改造函数 compose（翻译：构成，整理成）成一个函数，用 compose 后的函数去改造 store 的 dispatch 
+     * 此 store.dispatch 相当于 redux-thunk 中间间的 next 参数
+     */
     dispatch = compose(...chain)(store.dispatch)
 
     return {

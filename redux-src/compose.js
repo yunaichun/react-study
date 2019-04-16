@@ -8,8 +8,14 @@
  * from right to left. For example, compose(f, g, h) is identical to doing
  * (...args) => f(g(h(...args))).
  */
-/*在 applyMiddleware 方法中，我们传入的「参数」是原始的 dispatch 方法，返回的「结果」是改造后的 dispatch 方法。
-  通过 compose，我们可以让多个改造函数抽象成一个改造函数。
+/* 
+ * 一、applyMiddleware: 传入原始的 dispatch 方法，返回改造后的 dispatch 方法
+ * 二、通过 compose，我们可以让多个改造函数抽象成一个改造函数。
+ * 三、使用
+ * let enhanceCreateStore = compose(
+ *   applyMiddleware(reduxThunk),
+ * )(createStore);
+ * // enhanceCreateStore(reducers, initialState)
 */
 export default function compose(...funcs) {
   /*当未传入函数时，返回一个函数：arg => arg*/
