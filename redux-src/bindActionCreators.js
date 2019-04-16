@@ -1,3 +1,9 @@
+/**
+ * [bindActionCreator 把 action creators 转成拥有同名 keys 的对象，使用 dispatch 把每个 action creator 包装起来，这样可以直接调用它们]
+ * @param  {[Function]} actionCreator [action 创建函数]
+ * @param  {[Function]} dispatch      [store 的内置方法]
+ * @return {[Function]}               [此函数返回 dispatch actionCreator 的执行结果]
+ */
 function bindActionCreator(actionCreator, dispatch) {
   return function() {
     return dispatch(actionCreator.apply(this, arguments))
@@ -25,11 +31,14 @@ function bindActionCreator(actionCreator, dispatch) {
  * function as `actionCreators`, the return value will also be a single
  * function.
  */
+/*可以不让组件察觉到 Redux 的存在，action 文件里以对象形式返回*/
 export default function bindActionCreators(actionCreators, dispatch) {
+  /*actionCreators 是函数的话直接调用 bindActionCreator 函数*/
   if (typeof actionCreators === 'function') {
     return bindActionCreator(actionCreators, dispatch)
   }
 
+  /*actionCreators 必须是对象或者函数*/
   if (typeof actionCreators !== 'object' || actionCreators === null) {
     throw new Error(
       `bindActionCreators expected an object or a function, instead received ${
@@ -39,6 +48,7 @@ export default function bindActionCreators(actionCreators, dispatch) {
     )
   }
 
+  /*是对象的话循环遍历 actionCreators，返回一个对象*/
   const boundActionCreators = {}
   for (const key in actionCreators) {
     const actionCreator = actionCreators[key]
