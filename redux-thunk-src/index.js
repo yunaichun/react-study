@@ -40,7 +40,12 @@ function createThunkMiddleware(extraArgument) {
   return ({ dispatch, getState }) => next => action => {
     /*如果 action 是一个函数，就调用这个函数，并传入参数给函数使用*/
     if (typeof action === 'function') {
-      /*action 是一个函数：接受参数 dispatch、getState、extraArgument，在此函数内部重做 dispatch 操作*/
+      /* 思考：为什么要 action 是一个函数也可以正确执行 dispatch？
+       * 1、不使用中间件的情况，action 必须为一个对象
+       * 2、使用 thunk 中间件的情况，action 是一个函数：接受参数 dispatch、getState、extraArgument
+       * 3、实际使用的时候是在此 action 函数的内部执行了 dispatch 操作
+       * 4、此 dispatch 在 applyMiddleware 函数内部通过作用域链最终拿到的是增强的 dispatch 方法【当用户调用 dispatch 时, 中间件就会一个一个执行】
+       */
       return action(dispatch, getState, extraArgument);
     }
     /*否则调用用改造前的 dispatch 方法*/
