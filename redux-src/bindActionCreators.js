@@ -31,9 +31,9 @@ function bindActionCreator(actionCreator, dispatch) {
  * function as `actionCreators`, the return value will also be a single
  * function.
  */
-/*可以不让组件察觉到 Redux 的存在，action 文件里以对象形式返回*/
+/*可以不让组件察觉到 Redux 的存在*/
 export default function bindActionCreators(actionCreators, dispatch) {
-  /*actionCreators 是函数的话直接调用 bindActionCreator 函数*/
+  /*一、actionCreators 是函数的话直接调用 bindActionCreator 函数*/
   if (typeof actionCreators === 'function') {
     return bindActionCreator(actionCreators, dispatch)
   }
@@ -48,7 +48,21 @@ export default function bindActionCreators(actionCreators, dispatch) {
     )
   }
 
-  /*是对象的话循环遍历 actionCreators，返回一个对象*/
+  /*二、actionCreators 是对象的话循环遍历 actionCreators，返回一个对象
+   * export default connect(
+   *   state => ({
+   *     user: state.user
+   *   }),
+   *   dispatch => {
+   *     return {
+   *       actions: bindActionCreators(adBitManageAction, dispatch)
+   *     };
+   *   }
+   * )(Index);
+   * 1、此时 adBitManageAction 是一个对象，则 bindActionCreators(adBitManageAction, dispatch) 也返回一个对象
+   * 2、对象的 key 是 actionCreators 对象的所有 key 值，key对应的值是 bindActionCreator(actionCreators[key], dispatch)
+   * 3、bindActionCreator(actionCreators[key], dispatch) 返回一个函数，此函数返回 dispatch(actionCreators[key](payload)) 的执行结果
+   */
   const boundActionCreators = {}
   for (const key in actionCreators) {
     const actionCreator = actionCreators[key]
