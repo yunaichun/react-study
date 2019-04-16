@@ -10,12 +10,16 @@
  */
 /* 
  * 一、applyMiddleware: 传入原始的 dispatch 方法，返回改造后的 dispatch 方法
+ * 
  * 二、通过 compose，我们可以让多个改造函数抽象成一个改造函数。
+ * 
  * 三、使用
- * let enhanceCreateStore = compose(
- *   applyMiddleware(reduxThunk),
- * )(createStore);
- * // enhanceCreateStore(reducers, initialState)
+ * 1、let enhanceCreateStore = compose(
+ *          applyMiddleware(reduxThunk),
+ *        )(createStore);
+ *    // enhanceCreateStore(reducers, initialState)
+ * 
+ * 2、applyMiddleware(thunkMiddleware)(createStore)(reducer, initialState)
 */
 export default function compose(...funcs) {
   /*当未传入函数时，返回一个函数：arg => arg*/
