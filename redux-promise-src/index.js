@@ -47,12 +47,16 @@ export default function promiseMiddleware({ dispatch }) {
     /*二、action 是标准的FSA*/
     return isPromise(action.payload)
       /* action.payload 是 promise，实际用法如下：
-       * this.props.dispatch(
-       *   createAction(
-       *     'FETCH_POSTS', 
-       *     fetch(`/some/API/${postTitle}.json`).then(response => response.json())
-       *   )
-       * );
+       * 1、action creator
+       * const selectCats = () => {
+       *   const request = selectCatetories();
+       *   return {
+       *     type: 'selectCats',
+       *     payload: request
+       *   };
+       * };
+       * 2、实际调用
+       * store.dispatch(selectCats()).then();
        */
       ? action.payload
           .then(result => dispatch({ ...action, payload: result }))
