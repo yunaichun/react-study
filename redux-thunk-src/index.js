@@ -26,6 +26,7 @@ function createThunkMiddleware(extraArgument) {
    *     return fetch(`/some/API/${postTitle}.json`).then( res =>
    *       if (res.code === 0) {
    *         return true;
+   *         dispatch({ type: 'CHANGE_AD_BIT_MANAGE', data: res.data});
    *       } else {
    *         return false;
    *       }
@@ -50,23 +51,6 @@ function createThunkMiddleware(extraArgument) {
     return next(action);
   };
 }
-
-/*createThunkMiddleware 的作用是返回 thunk 中间件（middleware）*/
-// function createThunkMiddleware(extraArgument) {
-    /*这是「中间件函数」！！！！！！*/
-    // return function({ dispatch, getState }) {
-        /*这是中间件函数创建的「改造函数」！！！！！！*/
-        // return function(next) {
-           /* 这是改造函数改造后的「dispatch方法」！！！！！！*/
-            // return function(action) {
-                // if (typeof action === 'function') {
-                  // return action(dispatch, getState, extraArgument);
-                // }
-                // return next(action);
-            // }
-        // } 
-    // }
-// }
 
 const thunk = createThunkMiddleware();
 thunk.withExtraArgument = createThunkMiddleware;
