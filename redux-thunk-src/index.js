@@ -52,5 +52,15 @@ function createThunkMiddleware(extraArgument) {
   };
 }
 
+/* bindActionCreators + applyMiddleware + redux-thunk 结合使用过程：
+ * 第一步、bindActionCreators 会将 this.props.actions 转为 key 和 value 的键值对
+ * 第二步、执行 a = this.props.test("data")，返回 action，
+ *        同时根据 bindActionCreators 源码，会执行 dispatch(a)
+ * 第三步、若遇到返回 function 的 action creator，
+ *        根据 redux-thunk 的源码，会执行此函数，传入 dispatch，在此函数内部实际的调用dispatch
+ * 注意： applyMiddleware 实际是将执行 redux-thunk 函数，执行两次，分别传入 store 和 store.dispatch
+*/
+
+
 const thunk = createThunkMiddleware();
 thunk.withExtraArgument = createThunkMiddleware;
