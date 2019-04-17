@@ -48,15 +48,15 @@ export default function promiseMiddleware({ dispatch }) {
     return isPromise(action.payload)
       /* action.payload 是 promise，实际用法如下：
        * 1、action creator
-       * const selectCats = () => {
-       *   const request = selectCatetories();
+       * const updateCat = (params) => {
+       *   const request = updateCatetory(params)
        *   return {
-       *     type: 'selectCats',
-       *     payload: request
+       *     type: 'updateCat',
+       *     payload: params
        *   };
        * };
        * 2、实际调用
-       * store.dispatch(selectCats()).then();
+       * store.dispatch(updateCat('params')).then();
        */
       ? action.payload
           .then(result => dispatch({ ...action, payload: result }))
