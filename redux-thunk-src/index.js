@@ -23,19 +23,17 @@ function createThunkMiddleware(extraArgument) {
    * function logStateInOneSecond(name) {
    *   // 这个函数会在合适的时候 dispatch 一个真正的 action
    *   return (dispatch, getState, name) => {
-   *     setTimeout({
-   *       console.log(getState())
-   *       dispatch({
-   *         type:'LOG_OK',
-   *         payload: {
-   *           name,
-   *         }
-   *       })
-   *     }, 1000)
+   *     return fetch(`/some/API/${postTitle}.json`).then( res =>
+   *       if (res.code === 0) {
+   *         return true;
+   *       } else {
+   *         return false;
+   *       }
+   *     );
    *   }
    * }
    * // dispatch 的参数是一个函数
-   * store.dispatch(logStateInOneSecond('jay'))
+   * store.dispatch(logStateInOneSecond('jay')).then(……)
    */
   return ({ dispatch, getState }) => next => action => {
     /*如果 action 是一个函数，就调用这个函数，并传入参数给函数使用*/
