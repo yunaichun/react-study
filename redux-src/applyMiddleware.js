@@ -30,8 +30,10 @@ import compose from './compose'
  *          reduxRouter
  *        )(createStore);
  *    const store = enhanceCreateStore(reducers, initialState)
+ * 步骤一：根据 compose 函数的定义相当于执行 reduxRouter(createStore)，应该还是返回 createStore (增强的)
+ * 步骤二：将上述结果传入 applyMiddleware ，相当于执行 applyMiddleware(thunk, promise, logger)(createStore) 
  * 
- * 2、const store = applyMiddleware(thunk)(createStore)(reducer, initialState)【等价于 1 的写法（1是添加了串联）】
+ * 2、const store = applyMiddleware(thunk)(createStore)(reducer, initialState)【等价于 1 的写法】
  *
  * 3、const store = createStore(reducer, initial_state, applyMiddleware(thunk, promise, logger))【等价于 2 的写法（2是源码写法）】
  */
@@ -56,6 +58,7 @@ export default function applyMiddleware(...middlewares) {
       )
     }
     /*接下来我们准备将每个中间件与我们的 state 关联起来（通过传入 getState 方法），得到改造函数*/
+    /*此处定义的 middlewareAPI 相当于形参！！！！！！最后传入的 store.dispatch 才是实参！！！！！！*/
     const middlewareAPI = {
       getState: store.getState,
       dispatch: (...args) => dispatch(...args)
