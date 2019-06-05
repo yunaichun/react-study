@@ -36,6 +36,7 @@ function createThunkMiddleware(extraArgument) {
    * // dispatch 的参数是一个函数
    * store.dispatch(logStateInOneSecond('jay')).then(……)
    */
+  
   return ({ dispatch, getState }) => next => action => {
     /*如果 action 是一个函数，就调用这个函数，并传入参数给函数使用*/
     if (typeof action === 'function') {

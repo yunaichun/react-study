@@ -38,9 +38,10 @@ import compose from './compose'
  * 3、const store = createStore(reducer, initial_state, applyMiddleware(thunk, promise, logger))【等价于 2 的写法（2是源码写法）】
  */
 export default function applyMiddleware(...middlewares) {
-  /* 返回一个函数 A，函数 A 的参数是一个 createStore 函数。
-   * 函数 A 的返回值是函数 B，其实也就是一个加强后的 createStore 函数，大括号内的是函数 B 的函数体
-   */
+  /*applyMiddleware 返回一个函数：
+    1、此函数接收 createStore 函数
+    2、返回一个增强的 createStore 函数
+  */
   return createStore => (...args) => {
     /*用参数传进来的 createStore 创建一个 store*/
     const store = createStore(...args)
@@ -83,6 +84,12 @@ export default function applyMiddleware(...middlewares) {
      * 以此类推. 所以最后 dispatch 作为有中间件的 store 的 dispatch 属性输出, 当用户调用 dispatch 时, 中间件就会一个一个
      * 执行完逻辑后, 将执行权给下一个, 直到原始的 store.dispacth, 最后计算出新的 state
      */
+    // 一、applyMiddleware 方法：传入中间件 -> 
+    //                         返回一个函数，此函数接受参数 createStore -> 
+    //                         返回增强的 createStore 函数！！！！！！！！！！！！
+    // 二、实际中间件执行顺序：依次执行中间件 -> 
+    //                     中间件传入 getState、和 dispatch，返回的是一个改造 dispatch 的函数 -> 
+    //                     此函数传入 store.dispatch，返回改造后的 dispatch 函数 ！！！！！！！！！！！！
     dispatch = compose(...chain)(store.dispatch)
 
     return {
