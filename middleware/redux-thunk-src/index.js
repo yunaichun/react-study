@@ -16,8 +16,8 @@ function createThunkMiddleware(extraArgument) {
    * }
    *
    *二、返回 function(next) {}
-   * 中间件返回的是一个改造 dispatch 的函数 
-   * 所以 next 参数其实就是传进来的 store.dispatch
+   * 中间件返回的是一个 改造 dispatch 的函数，所以 next 参数其实就是传进来的 store.dispatch
+   * 此函数执行后返回   改造后的 dispatch 的函数
    *
    *三、实际使用
    * function logStateInOneSecond(name) {

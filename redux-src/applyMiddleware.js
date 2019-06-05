@@ -88,7 +88,7 @@ export default function applyMiddleware(...middlewares) {
     //                         返回一个函数，此函数接受参数 createStore -> 
     //                         返回增强的 createStore 函数！！！！！！！！！！！！
     // 二、实际中间件执行顺序：依次执行中间件 -> 
-    //                     中间件传入 getState、和 dispatch，返回的是一个改造 dispatch 的函数 -> 
+    //                     中间件传入 middlewareAPI(即为 getState、dispatch)，返回的是一个改造 dispatch 的函数-> 
     //                     此函数传入 store.dispatch，返回改造后的 dispatch 函数 ！！！！！！！！！！！！
     dispatch = compose(...chain)(store.dispatch)
 

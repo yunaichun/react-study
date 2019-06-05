@@ -52,7 +52,7 @@ export default function promiseMiddleware({ dispatch }) {
        *   const request = updateCatetory(params)
        *   return {
        *     type: 'updateCat',
-       *     payload: params
+       *     payload: request
        *   };
        * };
        * 2、实际调用
