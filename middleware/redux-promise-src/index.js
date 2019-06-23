@@ -20,6 +20,7 @@ export default function promiseMiddleware({ dispatch }) {
        * function fetchPosts(postTitle) {
        *     return new Promise(function(resolve, reject) {
        *       // 根据源码：不会将异常带出去，会将 then 的结果 { type: 'FETCH_POSTS', payload: response.json() } 带到源码的 then 中，被 dispatch 执行
+       *       // return 即为 resolve 啊！！！！！！！！！！
        *       return fetch(`/some/API/${postTitle}.json`)
        *         .then(response => {
        *           type: 'FETCH_POSTS',
