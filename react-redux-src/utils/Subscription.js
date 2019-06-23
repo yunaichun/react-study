@@ -51,9 +51,13 @@ function createListenerCollection() {
 
 export default class Subscription {
   constructor(store, parentSub) {
+    /*传进来的 store*/
     this.store = store
+    /*可传可不传*/
     this.parentSub = parentSub
+    /*取消订阅列表默认位 null*/
     this.unsubscribe = null
+    /*监听者默认为 空监听*/ 
     this.listeners = nullListeners
 
     this.handleChangeWrapper = this.handleChangeWrapper.bind(this)
@@ -70,16 +74,22 @@ export default class Subscription {
 
   handleChangeWrapper() {
     if (this.onStateChange) {
+      /*实例上 onStateChange 方法*/
       this.onStateChange()
     }
   }
 
+  /*是否被订阅*/
   isSubscribed() {
+    /*初始状态是 false*/
     return Boolean(this.unsubscribe)
   }
 
+  /*尝试订阅*/
   trySubscribe() {
+    /*没有订阅列表的情况*/
     if (!this.unsubscribe) {
+      /*parentSub 为实例第二个参数*/
       this.unsubscribe = this.parentSub
         ? this.parentSub.addNestedSub(this.handleChangeWrapper)
         : this.store.subscribe(this.handleChangeWrapper)
@@ -88,7 +98,9 @@ export default class Subscription {
     }
   }
 
+  /*尝试取消订阅*/
   tryUnsubscribe() {
+    /*有订阅列表的情况*/
     if (this.unsubscribe) {
       this.unsubscribe()
       this.unsubscribe = null

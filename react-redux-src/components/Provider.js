@@ -7,21 +7,27 @@ class Provider extends Component {
   constructor(props) {
     super(props)
 
+    /*引用 Provider 组件时传递的属性*/
     const { store } = props
 
+    /*通知订阅者方法*/
     this.notifySubscribers = this.notifySubscribers.bind(this)
-    const subscription = new Subscription(store)
+    /*订阅实例*/
+    const subscription = new Su bscription(store)
+    /*订阅实例添加方法*/
     subscription.onStateChange = this.notifySubscribers
 
     this.state = {
-      store,
-      subscription
+      store, /*store 状态*/
+      subscription /*订阅实例*/
     }
 
+    /*前一轮状态*/
     this.previousState = store.getState()
   }
 
   componentDidMount() {
+    /*标识位：表明正在挂载*/
     this._isMounted = true
 
     this.state.subscription.trySubscribe()
@@ -48,6 +54,9 @@ class Provider extends Component {
     }
   }
 
+  /**
+   * [notifySubscribers 通知订阅者方法]
+   */
   notifySubscribers() {
     this.state.subscription.notifyNestedSubs()
   }
