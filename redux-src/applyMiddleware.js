@@ -91,7 +91,22 @@ export default function applyMiddleware(...middlewares) {
     //                     中间件传入 middlewareAPI(即为 getState、dispatch)，返回的是一个改造 dispatch 的函数-> 
     //                     此函数传入 store.dispatch，返回改造后的 dispatch 函数 ！！！！！！！！！！！！
     dispatch = compose(...chain)(store.dispatch)
+   
+   
+    /* 化繁为简：假设只有一个中间件 redux-promise
+    1、代码解析 : 
+      const china = [promiseMiddleware(middlewareAPI)] = [ a ]
+      compose(...chain) = function(...args) { return a(...args) }
+      dispatch = (function(...args) { return a(...args) })(store.dispatch)
 
+    2、可以理解一下 a :
+      参数：middlewareAPI 为 promiseMiddleware 第一个参数
+      返回一个函数：next => action => {}
+
+    3、理解 compose(...chain)(store.dispatch) ： 
+      参数：store.dispatch 为实际参数，next 为形式参数
+      返回一个函数：接收 action 的 dispatch 函数
+    */
     return {
       ...store,
       dispatch
