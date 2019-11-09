@@ -107,6 +107,13 @@ export default function applyMiddleware(...middlewares) {
       参数：store.dispatch 为实际参数，next 为形式参数
       返回一个函数：接收 action 的 dispatch 函数
     */
+   /* middlewareAPI
+    1、middlewareAPI 里面的 dispatch 为下面的定义 compose(...chain)(store.dispatch)
+    2、由此可以知道：
+       promiseMiddleware 第一个参数 dispatch 为包装后的 dispatch
+       promiseMiddleware 第二个参数 next 为未包装的 dispatch
+       
+    */
     return {
       ...store,
       dispatch
