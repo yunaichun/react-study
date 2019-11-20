@@ -228,7 +228,7 @@ export default function combineReducers(reducers) {
         throw new Error(errorMessage)
       }
       nextState[key] = nextStateForKey
-      /*下一步状态与当前状态不一致代表状态已经改变*/
+      /* 只要其中的一个 reducer 后一个状态和前一个状态不一样，hasChanged 均为true，后续就不再判断了 */
       hasChanged = hasChanged || nextStateForKey !== previousStateForKey
     }
     /*返回最新的 state*/
