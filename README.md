@@ -4,7 +4,8 @@
 
 ## 目录介绍
 
-- redux-src: redux 源码学习。参考 [Redux官方仓库](https://github.com/reduxjs/redux)、[Redux中文文档](http://cn.redux.js.org/)、[美图-Redux从设计到源码](https://tech.meituan.com/2017/07/14/redux-design-code.html)
+- redux-src: redux 源码学习。参考 [React官方文档](https://reactjs.org)、[React源码解析](https://react.jokcy.me/)、[阿里知乎专栏](https://zhuanlan.zhihu.com/purerender)、[React内部原理](http://tcatche.site/2017/07/react-internals-part-one-basic-rendering/)、[React技术揭秘](https://react.iamkasong.com/)
+- redux-src: redux 源码学习。参考 [Redux官方文档](http://cn.redux.js.org/)、[Redux官方仓库](https://github.com/reduxjs/redux)、[美图-Redux从设计到源码](https://tech.meituan.com/2017/07/14/redux-design-code.html)
 - redux-promise-src: redux-promise 源码学习。参考 [redux-promise官方仓库](https://github.com/redux-utilities/redux-promise)
 - redux-thunk-src: redux-thunk 源码学习。参考 [redux-thunk官方仓库](https://github.com/reduxjs/redux-thunk)
 - react-redux-src: react-redux 源码学习。参考 [react-redux官方仓库](https://github.com/reduxjs/react-redux)
