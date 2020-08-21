@@ -1,6 +1,7 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const {CleanWebpackPlugin} = require('clean-webpack-plugin');
+const HardSourceWebpackPlugin = require('hard-source-webpack-plugin');
 
 module.exports = {
     entry: {
@@ -8,7 +9,7 @@ module.exports = {
     },
     output: {
         path: path.join(__dirname, 'dist'),
-        filename: '[name]_[chunkhash:8].js',
+        filename: '[name].js',
     },
     mode: 'development',
     optimization: {
@@ -18,13 +19,21 @@ module.exports = {
         rules: [
             {
                 test: /\.js$/,
-                use: {
-                    loader: 'babel-loader',
-                    options: {
-                        presets: ['@babel/preset-env'],
-                        plugins: [['@babel/plugin-transform-react-jsx', {pragma: 'createElement'}]]
+                use: [
+                    {
+                        loader: 'thread-loader',
+                        options: {
+                          workers: 2,
+                        },
                     },
-                },
+                    {
+                        loader: 'babel-loader',
+                        options: {
+                            presets: ['@babel/preset-env'],
+                            plugins: [['@babel/plugin-transform-react-jsx', {pragma: 'createElement'}]]
+                        },
+                    },
+                ]
             }
         ]
     },
@@ -43,6 +52,7 @@ module.exports = {
               collapseWhitespace: true,
               preserveLineBreaks: false,
             },
-        })
+        }),
+        new HardSourceWebpackPlugin(),
     ]
 };
