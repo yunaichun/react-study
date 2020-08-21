@@ -1,8 +1,10 @@
 const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const {CleanWebpackPlugin} = require('clean-webpack-plugin');
 
 module.exports = {
     entry: {
-        main: path.join(__dirname, './main.js'),
+        main: path.join(__dirname, './src/main.js'),
     },
     output: {
         path: path.join(__dirname, 'dist'),
@@ -26,4 +28,21 @@ module.exports = {
             }
         ]
     },
+    plugins: [
+        new CleanWebpackPlugin(),
+        new HtmlWebpackPlugin({
+            inject: true,
+            filename: `index.html`,
+            template: path.join(__dirname, `./src/index.html`),
+            chunks: ['main'],
+            minify: {
+              html5: true,
+              minifyJS: true,
+              minifyCSS: true,
+              removeComments: false,
+              collapseWhitespace: true,
+              preserveLineBreaks: false,
+            },
+        })
+    ]
 };
