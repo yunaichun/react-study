@@ -21,3 +21,6 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+/react-simple-diy/node_modules
+/react-simple-diy/dist
