@@ -1,6 +1,13 @@
- import { createElement, Component, render} from '../lib/simple-react';
+ import { createElement, Component, render} from './simple-react';
 
  class MyComponent extends Component {
+    constructor () {
+        super();
+        this.state = {
+            a: 1,
+            b: 2,
+        };
+    }
 
     render() {
         return <div id="wrap">
