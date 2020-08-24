@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8">
+ <title>range3</title>
+ <script>
+      // == 参考地址：https://www.jianshu.com/p/ad2f818cc3b0
+     function deleteChar() {
+          var div = document.getElementById("myDiv");
+          var textNode = div.firstChild;
+          var rangeObj = document.createRange();
+          rangeObj.setStart(textNode, 1);
+          rangeObj.setEnd(textNode, 4);
+          console.log(111, rangeObj.startContainer, rangeObj.startOffset);
+          console.log(222, rangeObj.endContainer, rangeObj.endOffset);
+          rangeObj.deleteContents();
+     }
+</script>
+</head>
+<body>
+     <div id="myDiv" style="color:red">这段文字是用来删除的</div>
+     <button onclick="deleteChar()">删除文字</button>
+</body>
+</html>
