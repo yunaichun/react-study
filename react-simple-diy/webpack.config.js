@@ -1,3 +1,4 @@
+const webpack = require('webpack');
 const path = require('path');
 const glob = require('glob');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
@@ -21,10 +22,10 @@ const setMPA = () => {
         // == HtmlWebpackPlugin 构建的页面
         return htmlWebpackPlugins.push(
             new HtmlWebpackPlugin({
-                inject: true,
-                filename: `${pageName}.html`,
                 template: path.join(__dirname, `./src/${pageName}/index.html`),
+                filename: `${pageName}.html`,
                 chunks: [pageName],
+                inject: true,
                 minify: {
                     html5: true,
                     minifyJS: true,
@@ -47,12 +48,21 @@ const { entry, htmlWebpackPlugins } = setMPA();
 module.exports = {
     entry,
     output: {
-        path: path.join(__dirname, 'dist'),
+        path: path.resolve('dist'),
         filename: '[name].js',
+        publicPath: '/',
     },
     mode: 'development',
     optimization: {
         minimize: false,
+    },
+    devServer: {
+        port: 8374,
+        open: true,
+        hot: true,
+        contentBase: path.resolve('dist'),
+        openPage: `JSX.html`,
+        index: `JSX.html`,
     },
     module: {
         rules: [
@@ -77,7 +87,8 @@ module.exports = {
         ]
     },
     plugins: [
-        new CleanWebpackPlugin(),
+        // new CleanWebpackPlugin(),
         new HardSourceWebpackPlugin(),
+        new webpack.HotModuleReplacementPlugin(),
     ].concat(htmlWebpackPlugins)
 };
