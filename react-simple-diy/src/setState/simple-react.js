@@ -1,18 +1,41 @@
+const RENDER_TO_DOM = Symbol('render to dom');
+
 class ElementWrapper {
     constructor(type) {
         this.root = document.createElement(type);
     }
     setAttribute(name, value) {
-        this.root.setAttribute(name, value);
+        if (name.match(/^on([\s\S]+)$/)) {
+            // == 绑定事件
+            this.root.addEventListener(RegExp.$1.replace(/^[\s\S]/, c => c.toLowerCase()), value);
+        } else {
+            if (name === 'className') {
+                this.root.setAttribute('class', value);
+            } else {
+                this.root.setAttribute(name, value);
+            }
+        }
     }
     appendChild(component) {
-        this.root.appendChild(component.root);
+        let range = document.createRange();
+        range.setStart(this.root, this.root.childNodes.length);
+        range.setEnd(this.root, this.root.childNodes.length);
+        // == 此处调用的是 component 子节点的 RENDER_TO_DOM 方法
+        component[RENDER_TO_DOM](range);
+    }
+    [RENDER_TO_DOM](range) {
+        range.deleteContents();
+        range.insertNode(this.root);
     }
 }
 
 class TextWrapper {
     constructor(content) {
         this.root = document.createTextNode(content);
+    }
+    [RENDER_TO_DOM](range) {
+        range.deleteContents();
+        range.insertNode(this.root);
     }
 }
 
@@ -22,6 +45,7 @@ export class Component {
         this.props = Object.create(null);
         this.children = [];
         this._root = null;
+        this._range = null;
     }
     setAttribute(name, value) {
         this.props[name] = value;
@@ -31,13 +55,35 @@ export class Component {
     appendChild(component) {
         this.children.push(component);
     }
-    // == 保持和 ElementWrapper 方法一致，具有 root 属性
-    // == 这里面的关键是自定义组件有 render 方法，而 render 方法的执行是返回新的 JSX ，JSX 又被解析成新的 createElement
-    get root() {
-        if (!this._root) {
-            this._root = this.render().root;
+    [RENDER_TO_DOM](range) {
+        // == range 存下来方便重新绘制
+        this._range = range;
+        this.render()[RENDER_TO_DOM](range);
+    }
+    rerender() {
+        // == 删除节点
+        this._range.deleteContents();
+        // == 重新绘制
+        this[RENDER_TO_DOM](this._range);
+    }
+    setState(newState) {
+        if (this.state === null || typeof this.state !== 'object') {
+            this.state = newState;
+            this.rerender();
+            return;
         }
-        return this._root;
+        let merge = (oldState, newState) => {
+            for (let p in newState) {
+                if (oldState[p] === null || typeof oldState[p] !== 'object') {
+                    oldState[p] = newState[p]
+                } else {
+                    merge(oldState[p], newState[p]);
+                }
+            }
+        }
+
+        merge(this.state, newState);
+        this.rerender();
     }
 }
 
@@ -65,6 +111,9 @@ export function createElement(type, attributes, ...children) {
             if (typeof child === 'string') {
                 child = new TextWrapper(child);
             }
+            if (child === null) {
+                continue;
+            }
             // == 子节点是数组【自定义组件内部通过 this.cildren 存储和渲染子节点】
             if ((typeof child === 'object') && (child instanceof Array)) {
                 insertChildren(child);
@@ -80,6 +129,9 @@ export function createElement(type, attributes, ...children) {
 }
 
 export function render(component, parentElement) {
-    // == 不管是原生 dom 还是自定义组件都是取上面的 root 属性
-    parentElement.appendChild(component.root);
+    let range = document.createRange();
+    range.setStart(parentElement, 0);
+    range.setEnd(parentElement, parentElement.childNodes.length);
+    range.deleteContents();
+    component[RENDER_TO_DOM](range);
 }

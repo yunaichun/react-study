@@ -1,6 +1,6 @@
  import { createElement, Component, render} from './simple-react';
 
- class MyComponent extends Component {
+class MyComponent extends Component {
     constructor () {
         super();
         this.state = {
