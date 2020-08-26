@@ -8,7 +8,7 @@ class ElementWrapper {
         if (name.match(/^on([\s\S]+)$/)) {
             // == 绑定事件
             this.root.addEventListener(RegExp.$1.replace(/^[\s\S]/, c => c.toLowerCase()), value);
-        } else {
+        } else { 
             if (name === 'className') {
                 this.root.setAttribute('class', value);
             } else {
@@ -61,10 +61,17 @@ export class Component {
         this.render()[RENDER_TO_DOM](range);
     }
     rerender() {
-        // == 删除节点
-        this._range.deleteContents();
+        let oldRange = this._range;
+    
+        let range = document.createRange();
+        range.setStart(oldRange.startContainer, oldRange.startOffset);
+        range.setEnd(oldRange.startContainer, oldRange.startOffset);
         // == 重新绘制
-        this[RENDER_TO_DOM](this._range);
+        this[RENDER_TO_DOM](range);
+    
+        oldRange.setStart(range.endContainer, range.endOffset);
+        // == 删除节点
+        oldRange.deleteContents();
     }
     setState(newState) {
         if (this.state === null || typeof this.state !== 'object') {

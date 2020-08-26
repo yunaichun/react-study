@@ -52,17 +52,9 @@ module.exports = {
         filename: '[name].js',
         publicPath: '/',
     },
-    mode: 'development',
+    mode: process.env.NODE_ENV,
     optimization: {
         minimize: false,
-    },
-    devServer: {
-        port: 8374,
-        open: true,
-        hot: true,
-        contentBase: path.resolve('dist'),
-        openPage: `JSX.html`,
-        index: `JSX.html`,
     },
     module: {
         rules: [
@@ -87,8 +79,21 @@ module.exports = {
         ]
     },
     plugins: [
-        // new CleanWebpackPlugin(),
-        new HardSourceWebpackPlugin(),
-        new webpack.HotModuleReplacementPlugin(),
-    ].concat(htmlWebpackPlugins)
+        process.env.NODE_ENV === 'development' ? (
+            new webpack.HotModuleReplacementPlugin()
+        ) : (
+            new CleanWebpackPlugin(),
+            new HardSourceWebpackPlugin()
+        ),
+    ].concat(htmlWebpackPlugins),
+    devtool: process.env.NODE_ENV === 'development' ?
+        'source-map' : false,
+    devServer: process.env.NODE_ENV === 'development' ? {
+        port: 8374,
+        open: true,
+        hot: true,
+        contentBase: path.resolve('dist'),
+        openPage: `JSX.html`,
+        index: `JSX.html`,
+    } : {},
 };
