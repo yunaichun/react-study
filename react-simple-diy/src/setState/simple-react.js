@@ -64,11 +64,13 @@ export class Component {
         let oldRange = this._range;
     
         let range = document.createRange();
+        // == --------start 和 end 设置一致表示在最开始插入--------
         range.setStart(oldRange.startContainer, oldRange.startOffset);
         range.setEnd(oldRange.startContainer, oldRange.startOffset);
         // == 重新绘制
         this[RENDER_TO_DOM](range);
-    
+
+        // == --------修正 start, 可以将原来的 node 全部删掉--------
         oldRange.setStart(range.endContainer, range.endOffset);
         // == 删除节点
         oldRange.deleteContents();
