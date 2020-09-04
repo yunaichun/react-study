@@ -18,9 +18,9 @@ export class Component {
     get vdom() {
         return this.render().vdom;
     }
-    get vchildren() {
-        return this.children.map(child => child.vdom);
-    }
+    // get vchildren() {
+    //     return this.children.map(child => child.vdom);
+    // }
     [RENDER_TO_DOM](range) {
         this._range = range;
         this._vdom = this.vdom;
@@ -28,15 +28,67 @@ export class Component {
     }
     // == -------- 重新渲染的逻辑: 即为虚拟 DOM patch 的过程 -------
     rerender() {
-        let oldRange = this._range;
-    
-        let range = document.createRange();
-        range.setStart(oldRange.startContainer, oldRange.startOffset);
-        range.setEnd(oldRange.startContainer, oldRange.startOffset);
-        this[RENDER_TO_DOM](range);
+        let isSameVDom = (oldVDom, newVDom) => {
+            // == type 不一样(根节点)
+            if (oldVDom.type !== newVDom.type) {
+                return false
+            }
+            // == props 不一样(属性)
+            for (let name in newVDom.props) {
+                if (newVDom.props[name] !== oldVDom.props[name]) {
+                    return false;
+                }
+            }
+            // == props 少了(属性)
+            if (Object.keys(oldVDom.props).length > Object.keys(newVDom.props).length) {
+                return false;
+            }
+            // == #text 不一行(文本节点)
+            if (newVDom.type === '#text') {
+                if (newVDom.content !== oldVDom.content) {
+                    return false;
+                }
+            }
+            return true;
+        }
 
-        oldRange.setStart(range.endContainer, range.endOffset);
-        oldRange.deleteContents();
+        let update = (oldVDom, newVDom) => {
+            // == 1、完全重渲染
+            if (!isSameVDom(oldVDom, newVDom)) {
+                newVDom[RENDER_TO_DOM](oldVDom._range);
+                return;
+            }
+
+            // == 2、不完全重渲染(对比children)
+            newVDom._range = oldVDom._range;
+
+            let newChildrenVDom = newVDom.vchildren;
+            let oldChildrenVDom = oldVDom.vchildren;
+            
+            if (!newChildrenVDom || !newChildrenVDom.length) return;
+            
+            for (let i = 0; i < newChildrenVDom.length; i++) {
+                // == 循环新的 VDOM 子树
+                let newChildVDom = newChildrenVDom[i];
+                let oldChildVDom = oldChildrenVDom[i];
+                if (i < oldChildrenVDom.length) {
+                    // == 更新子节点
+                    update(oldChildVDom, newChildVDom);
+                } else {
+                    // == 新增子节点
+                    let range = document.createRange();
+                    let tailRange = oldChildrenVDom[oldChildrenVDom.length - 1]._range;
+                    range.setStart(tailRange.endContainer, tailRange.endOffset);
+                    range.setEnd(tailRange.endContainer, tailRange.endOffset);
+                    newChildVDom[RENDER_TO_DOM](range);
+                }
+            }
+        }
+
+        let oldVDom = this._vdom;
+        let newVDom = this.vdom;
+        update(oldVDom, newVDom);
+        this._vdom = newVDom;
     }
     setState(newState) {
         if (this.state === null || typeof this.state !== 'object') {
@@ -66,7 +118,7 @@ class ElementWrapper extends Component {
     }
     // == 可以链式调用
     get vdom() {
-        this.children = this.children.map(child => child.vdom);
+        this.vchildren = this.children.map(child => child.vdom);
         return this;
     }
     // == 由虚拟 DOM 到真实 DOM 的创建: setAttribute 和 appendChild
