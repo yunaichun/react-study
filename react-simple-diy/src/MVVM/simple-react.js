@@ -23,8 +23,10 @@ export class Component {
     }
     [RENDER_TO_DOM](range) {
         this._range = range;
-        this.render()[RENDER_TO_DOM](range);
+        this._vdom = this.vdom;
+        this._vdom[RENDER_TO_DOM](range);
     }
+    // == -------- 重新渲染的逻辑: 即为虚拟 DOM patch 的过程 -------
     rerender() {
         let oldRange = this._range;
     
@@ -62,6 +64,7 @@ class ElementWrapper extends Component {
         super(type);
         this.type = type;
     }
+    // == 可以链式调用
     get vdom() {
         this.children = this.children.map(child => child.vdom);
         return this;
@@ -109,14 +112,18 @@ class TextWrapper extends Component {
         super(content);
         this.type = '#text';
         this.content = content;
-        this.root = document.createTextNode(content);
     }
+    // == 可以链式调用
     get vdom() {
         return this;
     }
     [RENDER_TO_DOM](range) {
-        range.deleteContents();
-        range.insertNode(this.root);
+        // == 1. 保持和父组件 Component 一致, 在 rerender 方法中调用
+        this._range = range;
+
+        // == 2. 真实 DOM 的创建
+        let root = document.createTextNode(this.content);
+        replaceContent(range, root);
     }
 }
 
