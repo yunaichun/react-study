@@ -18,6 +18,9 @@ export class Component {
     get vdom() {
         return this.render().vdom;
     }
+    get vchildren() {
+        return this.children.map(child => child.vdom);
+    }
     [RENDER_TO_DOM](range) {
         this._range = range;
         this.render()[RENDER_TO_DOM](range);
@@ -58,14 +61,58 @@ class ElementWrapper extends Component {
     constructor(type) {
         super(type);
         this.type = type;
-        this.root = document.createElement(type);
     }
     get vdom() {
-        return {
-            type: this.type,
-            props: this.props,
-            children: this.children.map(child => child.vdom)
+        this.children = this.children.map(child => child.vdom);
+        return this;
+    }
+    // == 由虚拟 DOM 到真实 DOM 的创建: setAttribute 和 appendChild
+    [RENDER_TO_DOM](range) {
+        // == 1. 保持和父组件 Component 一致, 在 rerender 方法中调用
+        this._range = range;
+
+        // == 2. 真实 DOM 的创建
+        let root = document.createElement(this.type);
+        // == 添加属性
+        for (let name in this.props) {
+            let value = this.props[name];
+            if (name.match(/^on([\s\S]+)$/)) {
+                root.addEventListener(RegExp.$1.replace(/^[\s\S]/, c => c.toLowerCase()), value);
+            } else { 
+                if (name === 'className') {
+                    root.setAttribute('class', value);
+                } else {
+                    root.setAttribute(name, value);
+                }
+            }
         }
+
+        if (!this.vchildren) {
+            this.vchildren = this.children.map(child => child.vdom);
+        }
+
+        // == 添加子节点
+        for (let child of this.vchildren) {
+            let childRange = document.createRange();
+            childRange.setStart(root, root.childNodes.length);
+            childRange.setEnd(root, root.childNodes.length);
+            child[RENDER_TO_DOM](childRange);
+        }
+
+        // == 将当前节点插入到父节点中
+        replaceContent(range, root);
+    }
+}
+
+class TextWrapper extends Component {
+    constructor(content) {
+        super(content);
+        this.type = '#text';
+        this.content = content;
+        this.root = document.createTextNode(content);
+    }
+    get vdom() {
+        return this;
     }
     [RENDER_TO_DOM](range) {
         range.deleteContents();
@@ -73,22 +120,16 @@ class ElementWrapper extends Component {
     }
 }
 
-class TextWrapper extends Component {
-    constructor(content) {
-        super(content);
-        this.content = content;
-        this.root = document.createTextNode(content);
-    }
-    get vdom() {
-        return {
-            type: '#text',
-            content: this.content
-        };
-    }
-    [RENDER_TO_DOM](range) {
-        range.deleteContents();
-        range.insertNode(this.root);
-    }
+function replaceContent(range, node) {
+    // == 1、插入节点 node
+    range.insertNode(node);
+    // == 2、将 node 之后的内容全部删除
+    range.setStartAfter(node);
+    range.deleteContents();
+
+    // == 3、range 就是 node 范围
+    range.setStartBefore(node);
+    range.setEndAfter(node);
 }
 
 export function createElement(type, attributes, ...children) {
