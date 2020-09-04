@@ -67,6 +67,7 @@ export class Component {
             
             if (!newChildrenVDom || !newChildrenVDom.length) return;
             
+            let tailRange = oldChildrenVDom[oldChildrenVDom.length - 1]._range;
             for (let i = 0; i < newChildrenVDom.length; i++) {
                 // == 循环新的 VDOM 子树
                 let newChildVDom = newChildrenVDom[i];
@@ -77,10 +78,11 @@ export class Component {
                 } else {
                     // == 新增子节点
                     let range = document.createRange();
-                    let tailRange = oldChildrenVDom[oldChildrenVDom.length - 1]._range;
                     range.setStart(tailRange.endContainer, tailRange.endOffset);
                     range.setEnd(tailRange.endContainer, tailRange.endOffset);
                     newChildVDom[RENDER_TO_DOM](range);
+                    // == 假如再有新的 dom 追加进来的滑，需要修改 tailRange
+                    tailRange = range;
                 }
             }
         }
