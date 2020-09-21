@@ -22,6 +22,7 @@ import {
 import {Component, PureComponent} from './ReactBaseClasses';
 import {createRef} from './ReactCreateRef';
 import {forEach, map, count, toArray, only} from './ReactChildren';
+// == ReactElement: bebel 解析 JSX
 import {
   createElement as createElementProd,
   createFactory as createFactoryProd,

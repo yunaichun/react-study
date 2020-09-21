@@ -28,6 +28,8 @@ if (__DEV__) {
   didWarnAboutStringRefs = {};
 }
 
+
+// == config 对象上没有 ref 属性
 function hasValidRef(config) {
   if (__DEV__) {
     if (hasOwnProperty.call(config, 'ref')) {
@@ -40,6 +42,7 @@ function hasValidRef(config) {
   return config.ref !== undefined;
 }
 
+// == config 对象上没有 key 属性
 function hasValidKey(config) {
   if (__DEV__) {
     if (hasOwnProperty.call(config, 'key')) {
@@ -52,6 +55,7 @@ function hasValidKey(config) {
   return config.key !== undefined;
 }
 
+// == 原始的 config 上有 key 属性, props 上就不允许挂载 key 属性
 function defineKeyPropWarningGetter(props, displayName) {
   const warnAboutAccessingKey = function() {
     if (__DEV__) {
@@ -74,6 +78,7 @@ function defineKeyPropWarningGetter(props, displayName) {
   });
 }
 
+// == 原始的 config 上有 ref 属性, props 上就不允许挂载 ref 属性
 function defineRefPropWarningGetter(props, displayName) {
   const warnAboutAccessingRef = function() {
     if (__DEV__) {
@@ -96,6 +101,7 @@ function defineRefPropWarningGetter(props, displayName) {
   });
 }
 
+// == 新版本 react 中 ref 已经不是 string 类型了
 function warnIfStringRefCannotBeAutoConverted(config) {
   if (__DEV__) {
     if (
@@ -143,6 +149,7 @@ function warnIfStringRefCannotBeAutoConverted(config) {
  * indicating filename, line number, and/or other information.
  * @internal
  */
+// == 返回 js 对象
 const ReactElement = function(type, key, ref, self, source, owner, props) {
   const element = {
     // This tag allows us to uniquely identify this as a React Element
@@ -196,6 +203,7 @@ const ReactElement = function(type, key, ref, self, source, owner, props) {
     }
   }
 
+  // == 返回 js 对象
   return element;
 };
 
@@ -345,6 +353,7 @@ export function jsxDEV(type, config, maybeKey, source, self) {
  * Create and return a new ReactElement of the given type.
  * See https://reactjs.org/docs/react-api.html#createelement
  */
+// == babel 转换 JSX 核心方法
 export function createElement(type, config, children) {
   let propName;
 
@@ -356,6 +365,7 @@ export function createElement(type, config, children) {
   let self = null;
   let source = null;
 
+  // == 1. 从 config 参数中过滤出 ref、key、__self、__source、[attr]: 挂载到 props 上
   if (config != null) {
     if (hasValidRef(config)) {
       ref = config.ref;
@@ -374,7 +384,7 @@ export function createElement(type, config, children) {
     for (propName in config) {
       if (
         hasOwnProperty.call(config, propName) &&
-        !RESERVED_PROPS.hasOwnProperty(propName)
+        !RESERVED_PROPS.hasOwnProperty(propName) // == 非保留的 props
       ) {
         props[propName] = config[propName];
       }
@@ -383,10 +393,13 @@ export function createElement(type, config, children) {
 
   // Children can be more than one argument, and those are transferred onto
   // the newly allocated props object.
+  // == 2. 将 children 参数挂载到 props 的 children 属性上
   const childrenLength = arguments.length - 2;
   if (childrenLength === 1) {
+    // == 只有 1 个子节点
     props.children = children;
   } else if (childrenLength > 1) {
+    // == 超过 1 个子节点
     const childArray = Array(childrenLength);
     for (let i = 0; i < childrenLength; i++) {
       childArray[i] = arguments[i + 2];
@@ -400,6 +413,7 @@ export function createElement(type, config, children) {
   }
 
   // Resolve default props
+  // == 3. 将 defaultProps 挂载到 props 的 defaultProps 属性上
   if (type && type.defaultProps) {
     const defaultProps = type.defaultProps;
     for (propName in defaultProps) {
@@ -408,6 +422,8 @@ export function createElement(type, config, children) {
       }
     }
   }
+  
+  // == 确保 props 上不会挂载 key 和 ref 属性
   if (__DEV__) {
     if (key || ref) {
       const displayName =
@@ -422,6 +438,8 @@ export function createElement(type, config, children) {
       }
     }
   }
+
+  // == ReactElement 方法: 返回 js 对象
   return ReactElement(
     type,
     key,
