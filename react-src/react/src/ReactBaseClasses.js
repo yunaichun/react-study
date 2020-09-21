@@ -17,6 +17,7 @@ if (__DEV__) {
 /**
  * Base class helpers for the updating state of a component.
  */
+// == 类的申明: props、context、refs、updater
 function Component(props, context, updater) {
   this.props = props;
   this.context = context;
@@ -54,6 +55,7 @@ Component.prototype.isReactComponent = {};
  * @final
  * @protected
  */
+// == 更新方法: 可以是 object 或 function 或 null
 Component.prototype.setState = function(partialState, callback) {
   invariant(
     typeof partialState === 'object' ||
@@ -62,6 +64,7 @@ Component.prototype.setState = function(partialState, callback) {
     'setState(...): takes an object of state variables to update or a ' +
       'function which returns an object of state variables.',
   );
+  // == 调用初始化 Component 上的 updater 上的 enqueueSetState 方法【todo: 在 react-dom 库上】
   this.updater.enqueueSetState(this, partialState, callback, 'setState');
 };
 
@@ -79,7 +82,9 @@ Component.prototype.setState = function(partialState, callback) {
  * @final
  * @protected
  */
+// == 强制更新
 Component.prototype.forceUpdate = function(callback) {
+  // == 调用初始化 Component 上的 updater 上的 enqueueForceUpdate 方法【todo: 在 react-dom 库上】
   this.updater.enqueueForceUpdate(this, callback, 'forceUpdate');
 };
 
@@ -88,6 +93,7 @@ Component.prototype.forceUpdate = function(callback) {
  * we would like to deprecate them, we're not going to move them over to this
  * modern base class. Instead, we define a getter that warns if it's accessed.
  */
+// == isMounted 和 replaceState 已经被废弃掉了
 if (__DEV__) {
   const deprecatedAPIs = {
     isMounted: [
@@ -120,12 +126,14 @@ if (__DEV__) {
   }
 }
 
+// == 纯组件
 function ComponentDummy() {}
 ComponentDummy.prototype = Component.prototype;
 
 /**
  * Convenience component with default shallow equality check for sCU.
  */
+// == 性能优化组件
 function PureComponent(props, context, updater) {
   this.props = props;
   this.context = context;
@@ -138,6 +146,7 @@ const pureComponentPrototype = (PureComponent.prototype = new ComponentDummy());
 pureComponentPrototype.constructor = PureComponent;
 // Avoid an extra prototype jump for these methods.
 Object.assign(pureComponentPrototype, Component.prototype);
+// == 标志位
 pureComponentPrototype.isPureReactComponent = true;
 
 export {Component, PureComponent};
