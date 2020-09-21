@@ -27,8 +27,8 @@ export const {
   decoupleUpdatePriorityFromScheduler,
   enableDebugTracing,
   skipUnmountedBoundaries,
-  enablePassiveEventIntervention,
   enableEagerRootListeners,
+  disableSchedulerTimeoutInWorkLoop,
 } = dynamicFeatureFlags;
 
 // On WWW, __EXPERIMENTAL__ is used for a new modern build.
