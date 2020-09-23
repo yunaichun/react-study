@@ -22,8 +22,11 @@ import ReactCurrentDispatcher from './ReactCurrentDispatcher';
 type BasicStateAction<S> = (S => S) | S;
 type Dispatch<A> = A => void;
 
+
+// == 返回 ReactCurrentDispatcher.current
 function resolveDispatcher() {
   const dispatcher = ReactCurrentDispatcher.current;
+  // == dispatcher 不反悔 null 
   invariant(
     dispatcher !== null,
     'Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for' +
@@ -36,12 +39,14 @@ function resolveDispatcher() {
   return dispatcher;
 }
 
+// == useContext 调用 ReactCurrentDispatcher.current.useContext
 export function useContext<T>(
   Context: ReactContext<T>,
   unstable_observedBits: number | boolean | void,
 ): T {
   const dispatcher = resolveDispatcher();
   if (__DEV__) {
+    // == unstable_observedBits 是 number 类型，同时第三个参数是数组
     if (unstable_observedBits !== undefined) {
       console.error(
         'useContext() second argument is reserved for future ' +
@@ -57,16 +62,19 @@ export function useContext<T>(
     }
 
     // TODO: add a more generic warning for invalid values.
+    // == Context._context 存在
     if ((Context: any)._context !== undefined) {
       const realContext = (Context: any)._context;
       // Don't deduplicate because this legitimately causes bugs
       // and nobody should be using this in existing code.
       if (realContext.Consumer === Context) {
+        // == useContext(Context.Consumer) 不能使用
         console.error(
           'Calling useContext(Context.Consumer) is not supported, may cause bugs, and will be ' +
             'removed in a future major release. Did you mean to call useContext(Context) instead?',
         );
       } else if (realContext.Provider === Context) {
+        // == useContext(Context.Provider) 不能使用
         console.error(
           'Calling useContext(Context.Provider) is not supported. ' +
             'Did you mean to call useContext(Context) instead?',
@@ -77,6 +85,7 @@ export function useContext<T>(
   return dispatcher.useContext(Context, unstable_observedBits);
 }
 
+// == useState 调用 ReactCurrentDispatcher.current.useState
 export function useState<S>(
   initialState: (() => S) | S,
 ): [S, Dispatch<BasicStateAction<S>>] {
@@ -84,6 +93,7 @@ export function useState<S>(
   return dispatcher.useState(initialState);
 }
 
+// == useReducer 调用 ReactCurrentDispatcher.current.useReducer
 export function useReducer<S, I, A>(
   reducer: (S, A) => S,
   initialArg: I,
@@ -93,11 +103,13 @@ export function useReducer<S, I, A>(
   return dispatcher.useReducer(reducer, initialArg, init);
 }
 
+// == useRef 调用 ReactCurrentDispatcher.current.useRef
 export function useRef<T>(initialValue: T): {|current: T|} {
   const dispatcher = resolveDispatcher();
   return dispatcher.useRef(initialValue);
 }
 
+// == useEffect 调用 ReactCurrentDispatcher.current.useEffect
 export function useEffect(
   create: () => (() => void) | void,
   deps: Array<mixed> | void | null,
@@ -106,6 +118,7 @@ export function useEffect(
   return dispatcher.useEffect(create, deps);
 }
 
+// == useLayoutEffect 调用 ReactCurrentDispatcher.current.useLayoutEffect
 export function useLayoutEffect(
   create: () => (() => void) | void,
   deps: Array<mixed> | void | null,
@@ -114,6 +127,7 @@ export function useLayoutEffect(
   return dispatcher.useLayoutEffect(create, deps);
 }
 
+// == useCallback 调用 ReactCurrentDispatcher.current.useCallback
 export function useCallback<T>(
   callback: T,
   deps: Array<mixed> | void | null,
@@ -122,6 +136,7 @@ export function useCallback<T>(
   return dispatcher.useCallback(callback, deps);
 }
 
+// == useMemo 调用 ReactCurrentDispatcher.current.useMemo
 export function useMemo<T>(
   create: () => T,
   deps: Array<mixed> | void | null,
@@ -130,6 +145,7 @@ export function useMemo<T>(
   return dispatcher.useMemo(create, deps);
 }
 
+// == useImperativeHandle 调用 ReactCurrentDispatcher.current.useImperativeHandle
 export function useImperativeHandle<T>(
   ref: {|current: T | null|} | ((inst: T | null) => mixed) | null | void,
   create: () => T,
@@ -139,6 +155,7 @@ export function useImperativeHandle<T>(
   return dispatcher.useImperativeHandle(ref, create, deps);
 }
 
+// == useDebugValue 调用 ReactCurrentDispatcher.current.useDebugValue
 export function useDebugValue<T>(
   value: T,
   formatterFn: ?(value: T) => mixed,
@@ -149,23 +166,30 @@ export function useDebugValue<T>(
   }
 }
 
+
+
 export const emptyObject = {};
 
+// == Concurrent Mode -> useTransition
+// == useTransition 调用 ReactCurrentDispatcher.current.useTransition
 export function useTransition(): [(() => void) => void, boolean] {
   const dispatcher = resolveDispatcher();
   return dispatcher.useTransition();
 }
 
+// == useDeferredValue 调用 ReactCurrentDispatcher.current.useDeferredValue
 export function useDeferredValue<T>(value: T): T {
   const dispatcher = resolveDispatcher();
   return dispatcher.useDeferredValue(value);
 }
 
+// == useOpaqueIdentifier 调用 ReactCurrentDispatcher.current.useOpaqueIdentifier
 export function useOpaqueIdentifier(): OpaqueIDType | void {
   const dispatcher = resolveDispatcher();
   return dispatcher.useOpaqueIdentifier();
 }
 
+// == useMutableSource 调用 ReactCurrentDispatcher.current.useMutableSource
 export function useMutableSource<Source, Snapshot>(
   source: MutableSource<Source>,
   getSnapshot: MutableSourceGetSnapshotFn<Source, Snapshot>,

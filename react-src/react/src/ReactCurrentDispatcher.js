@@ -12,6 +12,7 @@ import type {Dispatcher} from 'react-reconciler/src/ReactInternalTypes';
 /**
  * Keeps track of the current dispatcher.
  */
+// == ReactCurrentDispatcher.current 返回 react-reconciler/src/ReactInternalTypes 文件里的 Dispatcher
 const ReactCurrentDispatcher = {
   /**
    * @internal
