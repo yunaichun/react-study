@@ -36,7 +36,22 @@ import {
 
 import {createContext} from './ReactContext';
 import {lazy} from './ReactLazy';
+
+// == function component 没有实例: forwardRef 可以获取 PureComponent 的实例
+// const TargetComponent = React.forwardRef((props, ref) => <input type="text" ref={ref} />)
+// class Comp extends React.Component {
+//   constructor() {
+//     this.ref = React.createRef()
+//   }
+//   componentDidMount() {
+//     this.ref.current.value = 'ref get input'
+//   }
+//   render() {
+//     return <TargetComponent ref={this.ref} />
+//   }
+// }
 import {forwardRef} from './ReactForwardRef';
+
 import {memo} from './ReactMemo';
 import {block} from './ReactBlock';
 import {
