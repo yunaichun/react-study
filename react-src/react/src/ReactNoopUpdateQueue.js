@@ -7,6 +7,7 @@
 
 const didWarnStateUpdateForUnmountedComponent = {};
 
+// == 对 componentName 和 callerName 的限制
 function warnNoop(publicInstance, callerName) {
   if (__DEV__) {
     const constructor = publicInstance.constructor;
@@ -32,6 +33,7 @@ function warnNoop(publicInstance, callerName) {
 /**
  * This is the abstract API for an update queue.
  */
+// == Component 组件上的 updater 属性
 const ReactNoopUpdateQueue = {
   /**
    * Checks whether or not this composite component is mounted.
@@ -40,6 +42,7 @@ const ReactNoopUpdateQueue = {
    * @protected
    * @final
    */
+  // == 是否挂载方法
   isMounted: function(publicInstance) {
     return false;
   },
@@ -59,6 +62,7 @@ const ReactNoopUpdateQueue = {
    * @param {?string} callerName name of the calling function in the public API.
    * @internal
    */
+  // == 强制更新
   enqueueForceUpdate: function(publicInstance, callback, callerName) {
     warnNoop(publicInstance, 'forceUpdate');
   },
@@ -76,6 +80,7 @@ const ReactNoopUpdateQueue = {
    * @param {?string} callerName name of the calling function in the public API.
    * @internal
    */
+  // == 替换状态
   enqueueReplaceState: function(
     publicInstance,
     completeState,
@@ -97,6 +102,7 @@ const ReactNoopUpdateQueue = {
    * @param {?string} Name of the calling function in the public API.
    * @internal
    */
+  // == 更新 SetState
   enqueueSetState: function(
     publicInstance,
     partialState,

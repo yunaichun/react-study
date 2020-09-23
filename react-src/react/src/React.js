@@ -19,8 +19,12 @@ import {
   REACT_SCOPE_TYPE,
 } from 'shared/ReactSymbols';
 
+// == Component 上 的属性: props、context、refs、updater
 import {Component, PureComponent} from './ReactBaseClasses';
+
+// == createRef 会创建一个对象，对象上会包含 current 属性，初始为 null
 import {createRef} from './ReactCreateRef';
+
 import {forEach, map, count, toArray, only} from './ReactChildren';
 // == ReactElement: bebel 解析 JSX
 import {
@@ -29,6 +33,7 @@ import {
   cloneElement as cloneElementProd,
   isValidElement,
 } from './ReactElement';
+
 import {createContext} from './ReactContext';
 import {lazy} from './ReactLazy';
 import {forwardRef} from './ReactForwardRef';

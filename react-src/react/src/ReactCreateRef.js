@@ -9,6 +9,7 @@
 import type {RefObject} from 'shared/ReactTypes';
 
 // an immutable object with a single mutable value
+// == createRef 会创建一个对象，对象上会包含 current 属性，初始为 null
 export function createRef(): RefObject {
   const refObject = {
     current: null,
