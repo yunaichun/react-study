@@ -50,7 +50,7 @@ export function forwardRef<Props, ElementType: React$ElementType>(
     }
   }
 
-  // == 返回类似 ReactElement 对象的, $$typeof 不同
+  // == 通过 forwardRef 创建的组件的 type 是一个对象: 此对象下的 $$typeof 属性区别于 createElement 的 $$typeof 属性
   const elementType = {
     $$typeof: REACT_FORWARD_REF_TYPE,
     render,

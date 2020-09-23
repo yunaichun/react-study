@@ -26,6 +26,7 @@ import {Component, PureComponent} from './ReactBaseClasses';
 import {createRef} from './ReactCreateRef';
 
 import {forEach, map, count, toArray, only} from './ReactChildren';
+
 // == ReactElement: bebel 解析 JSX
 import {
   createElement as createElementProd,
@@ -34,22 +35,37 @@ import {
   isValidElement,
 } from './ReactElement';
 
+/* // == createContext 全局状态
+  const { Provider, Consumer } = React.createContext('default')
+  class Parent extends React.Component {
+    render() {
+      return (
+          <Provider value={1}>{this.props.children}</Provider>
+      )
+    }
+  }
+  function Child() {
+    return <Consumer>{value => <p>newContext: {value}</p>}</Consumer>
+  }
+*/
 import {createContext} from './ReactContext';
+
 import {lazy} from './ReactLazy';
 
-// == function component 没有实例: forwardRef 可以获取 PureComponent 的实例
-// const TargetComponent = React.forwardRef((props, ref) => <input type="text" ref={ref} />)
-// class Comp extends React.Component {
-//   constructor() {
-//     this.ref = React.createRef()
-//   }
-//   componentDidMount() {
-//     this.ref.current.value = 'ref get input'
-//   }
-//   render() {
-//     return <TargetComponent ref={this.ref} />
-//   }
-// }
+/* // == function component 没有实例: forwardRef 可以获取 PureComponent 的实例
+  const TargetComponent = React.forwardRef((props, ref) => <input type="text" ref={ref} />)
+  class Comp extends React.Component {
+    constructor() {
+      this.ref = React.createRef()
+    }
+    componentDidMount() {
+      this.ref.current.value = 'ref get input'
+    }
+    render() {
+      return <TargetComponent ref={this.ref} />
+    }
+  }
+*/
 import {forwardRef} from './ReactForwardRef';
 
 import {memo} from './ReactMemo';
