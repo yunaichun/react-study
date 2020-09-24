@@ -27,7 +27,7 @@ import {createRef} from './ReactCreateRef';
 
 import {forEach, map, count, toArray, only} from './ReactChildren';
 
-// == ReactElement: bebel 解析 JSX
+// == createElement 创建元素对象: 即 bebel 解析 JSX 最后形成实际的内容
 import {
   createElement as createElementProd,
   createFactory as createFactoryProd,
@@ -50,6 +50,14 @@ import {
 */
 import {createContext} from './ReactContext';
 
+/* // == 配合 Suspense 使用
+  const LazyComp = lazy(() => import('./lazy.js'))
+  const Parent = () => (
+    <Suspense fallback="loading data">
+      <LazyComp />
+    </Suspense>
+  )
+*/
 import {lazy} from './ReactLazy';
 
 /* // == function component 没有实例: forwardRef 可以获取 PureComponent 的实例
