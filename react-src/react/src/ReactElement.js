@@ -9,10 +9,13 @@ import getComponentName from 'shared/getComponentName';
 import invariant from 'shared/invariant';
 import {REACT_ELEMENT_TYPE} from 'shared/ReactSymbols';
 
+// == ReactCurrentOwner.current 为 null 或者 Fiber
 import ReactCurrentOwner from './ReactCurrentOwner';
 
+// == 对象是否有某一属性
 const hasOwnProperty = Object.prototype.hasOwnProperty;
 
+// == 保留的属性: key、ref、__self、__source
 const RESERVED_PROPS = {
   key: true,
   ref: true,
@@ -149,7 +152,7 @@ function warnIfStringRefCannotBeAutoConverted(config) {
  * indicating filename, line number, and/or other information.
  * @internal
  */
-// == 返回 js 对象
+// == 通过 React.createElement 返回的内容: {$$typeof, type, key, ref, props, _owner}
 const ReactElement = function(type, key, ref, self, source, owner, props) {
   const element = {
     // This tag allows us to uniquely identify this as a React Element
@@ -213,6 +216,7 @@ const ReactElement = function(type, key, ref, self, source, owner, props) {
  * @param {object} props
  * @param {string} key
  */
+// == 无 children 创建 React Element
 export function jsx(type, config, maybeKey) {
   let propName;
 
@@ -232,15 +236,18 @@ export function jsx(type, config, maybeKey) {
     key = '' + maybeKey;
   }
 
+  // == 拿到 key
   if (hasValidKey(config)) {
     key = '' + config.key;
   }
 
+  // == 拿到 ref
   if (hasValidRef(config)) {
     ref = config.ref;
   }
 
   // Remaining properties are added to a new props object
+  // == 非保留属性: 存入 props 对象上
   for (propName in config) {
     if (
       hasOwnProperty.call(config, propName) &&
@@ -251,6 +258,7 @@ export function jsx(type, config, maybeKey) {
   }
 
   // Resolve default props
+  // == 将 type 上的 defaultProps 参数: 存入 props 对象上
   if (type && type.defaultProps) {
     const defaultProps = type.defaultProps;
     for (propName in defaultProps) {
@@ -264,8 +272,8 @@ export function jsx(type, config, maybeKey) {
     type,
     key,
     ref,
-    undefined,
-    undefined,
+    undefined, // == self 为 undefined
+    undefined, // == source 为 undefined
     ReactCurrentOwner.current,
     props,
   );
@@ -277,6 +285,7 @@ export function jsx(type, config, maybeKey) {
  * @param {object} props
  * @param {string} key
  */
+// == 无 children 创建 React Element
 export function jsxDEV(type, config, maybeKey, source, self) {
   let propName;
 
@@ -338,6 +347,7 @@ export function jsxDEV(type, config, maybeKey, source, self) {
     }
   }
 
+  // == 可以传入 self 和 source
   return ReactElement(
     type,
     key,
@@ -353,7 +363,7 @@ export function jsxDEV(type, config, maybeKey, source, self) {
  * Create and return a new ReactElement of the given type.
  * See https://reactjs.org/docs/react-api.html#createelement
  */
-// == babel 转换 JSX 核心方法
+// == createElement 创建元素对象: 即 bebel 解析 JSX 最后形成实际的内容
 export function createElement(type, config, children) {
   let propName;
 
@@ -365,7 +375,7 @@ export function createElement(type, config, children) {
   let self = null;
   let source = null;
 
-  // == 1. 从 config 参数中过滤出 ref、key、__self、__source、[attr]: 挂载到 props 上
+  // == 1. 从 config 参数中过滤出 ref、key、__self、__source、非保留属性: 存入 props 对象上
   if (config != null) {
     if (hasValidRef(config)) {
       ref = config.ref;
@@ -393,7 +403,7 @@ export function createElement(type, config, children) {
 
   // Children can be more than one argument, and those are transferred onto
   // the newly allocated props object.
-  // == 2. 将 children 参数挂载到 props 的 children 属性上
+  // == 2. 将 children 参数: 存入 props 对象上
   const childrenLength = arguments.length - 2;
   if (childrenLength === 1) {
     // == 只有 1 个子节点
@@ -413,7 +423,7 @@ export function createElement(type, config, children) {
   }
 
   // Resolve default props
-  // == 3. 将 defaultProps 挂载到 props 的 defaultProps 属性上
+  // == 3. 将 type 上的 defaultProps 参数: 存入 props 对象上
   if (type && type.defaultProps) {
     const defaultProps = type.defaultProps;
     for (propName in defaultProps) {
@@ -446,6 +456,7 @@ export function createElement(type, config, children) {
     ref,
     self,
     source,
+    // == _ower 是一个 Fiber 对象
     ReactCurrentOwner.current,
     props,
   );
@@ -455,6 +466,7 @@ export function createElement(type, config, children) {
  * Return a function that produces ReactElements of a given type.
  * See https://reactjs.org/docs/react-api.html#createfactory
  */
+// == 调用 createElement 方法: 返回的是一个 createElement 方法（首先传递好 type 类型了）
 export function createFactory(type) {
   const factory = createElement.bind(null, type);
   // Expose the type on the factory and the prototype so that it can be
@@ -466,6 +478,7 @@ export function createFactory(type) {
   return factory;
 }
 
+// == 只是单纯的替换了 React Element 的 key 值
 export function cloneAndReplaceKey(oldElement, newKey) {
   const newElement = ReactElement(
     oldElement.type,
@@ -484,6 +497,7 @@ export function cloneAndReplaceKey(oldElement, newKey) {
  * Clone and return a new ReactElement using element as the starting point.
  * See https://reactjs.org/docs/react-api.html#cloneelement
  */
+// == cloneElement: 根据 element 的 type ，重新创建一个 React Element 
 export function cloneElement(element, config, children) {
   invariant(
     !(element === null || element === undefined),
@@ -509,6 +523,7 @@ export function cloneElement(element, config, children) {
   // Owner will be preserved, unless ref is overridden
   let owner = element._owner;
 
+  // == 1. 从 config 参数中过滤出 ref、key、__self、__source、非保留属性: 合并到 props 对象上
   if (config != null) {
     if (hasValidRef(config)) {
       // Silently steal the ref from the parent.
@@ -541,6 +556,7 @@ export function cloneElement(element, config, children) {
 
   // Children can be more than one argument, and those are transferred onto
   // the newly allocated props object.
+  // == 2. 将 children 参数: 合并到 props 对象上
   const childrenLength = arguments.length - 2;
   if (childrenLength === 1) {
     props.children = children;
@@ -562,6 +578,7 @@ export function cloneElement(element, config, children) {
  * @return {boolean} True if `object` is a ReactElement.
  * @final
  */
+// == 是否是 React Element 
 export function isValidElement(object) {
   return (
     typeof object === 'object' &&

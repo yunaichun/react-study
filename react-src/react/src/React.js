@@ -28,6 +28,9 @@ import {createRef} from './ReactCreateRef';
 import {forEach, map, count, toArray, only} from './ReactChildren';
 
 // == createElement 创建元素对象: 即 bebel 解析 JSX 最后形成实际的内容
+// == createFactory 返回的是 createElement  方法
+// == cloneElement  返回的是一个全新的 React Element 元素
+// == isValidElement 判断是否是合理的 React Element 
 import {
   createElement as createElementProd,
   createFactory as createFactoryProd,
@@ -97,11 +100,15 @@ import {
   useOpaqueIdentifier,
 } from './ReactHooks';
 
+// == createElementWithValidation  -  createElement
+// == createFactoryWithValidation  -  createFactory
+// == cloneElementWithValidation   -  cloneElement
 import {
   createElementWithValidation,
   createFactoryWithValidation,
   cloneElementWithValidation,
 } from './ReactElementValidator';
+
 import {createMutableSource} from './ReactMutableSource';
 import ReactSharedInternals from './ReactSharedInternals';
 import {createFundamental} from './ReactFundamental';
