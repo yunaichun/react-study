@@ -39,6 +39,8 @@ opaque type Block<Props>: React$AbstractComponent<
   null,
 > = React$AbstractComponent<Props, null>;
 
+
+// == BlockLoadFunction 存在的情况
 function lazyInitializer<Props, Args: Iterable<any>, Data>(
   payload: Payload<Props, Args, Data>,
 ): BlockComponent<Props, Data> {
@@ -49,11 +51,14 @@ function lazyInitializer<Props, Args: Iterable<any>, Data>(
   };
 }
 
+
+// == 接收 BlockRenderFunction 函数， BlockLoadFunction 函数 为参数
 export function block<Args: Iterable<any>, Props, Data>(
   render: BlockRenderFunction<Props, Data>,
   load?: BlockLoadFunction<Args, Data>,
 ): (...args: Args) => Block<Props> {
   if (__DEV__) {
+    // == load 如果存在必须是 函数
     if (load !== undefined && typeof load !== 'function') {
       console.error(
         'Blocks require a load function, if provided, but was given %s.',
@@ -61,16 +66,19 @@ export function block<Args: Iterable<any>, Props, Data>(
       );
     }
     if (render != null && render.$$typeof === REACT_MEMO_TYPE) {
+      // == render 是 memo 组件
       console.error(
         'Blocks require a render function but received a `memo` ' +
           'component. Use `memo` on an inner component instead.',
       );
     } else if (render != null && render.$$typeof === REACT_FORWARD_REF_TYPE) {
+      // == render 是 forwardRef 组件
       console.error(
         'Blocks require a render function but received a `forwardRef` ' +
           'component. Use `forwardRef` on an inner component instead.',
       );
     } else if (typeof render !== 'function') {
+      // == render 不是 function
       console.error(
         'Blocks require a render function but was given %s.',
         render === null ? 'null' : typeof render,
@@ -78,6 +86,7 @@ export function block<Args: Iterable<any>, Props, Data>(
     } else if (render.length !== 0 && render.length !== 2) {
       // Warn if it's not accepting two args.
       // Do not warn for 0 arguments because it could be due to usage of the 'arguments' object.
+      // == render 必须是 2 个参数
       console.error(
         'Block render functions accept exactly two parameters: props and data. %s',
         render.length === 1
@@ -86,6 +95,7 @@ export function block<Args: Iterable<any>, Props, Data>(
       );
     }
 
+    // == render 不支持 defaultProps 和 propTypes
     if (
       render != null &&
       (render.defaultProps != null || render.propTypes != null)
@@ -97,6 +107,7 @@ export function block<Args: Iterable<any>, Props, Data>(
     }
   }
 
+  // == 通过 bloack 创建的组件的 type 是一个对象: 此对象下的 $$typeof 属性区别于 createElement 的 $$typeof 属性
   if (load === undefined) {
     return function(): Block<Props> {
       const blockComponent: BlockComponent<Props, void> = {
@@ -112,8 +123,8 @@ export function block<Args: Iterable<any>, Props, Data>(
   }
 
   // Trick to let Flow refine this.
+  // == 通过 bloack 创建的组件的 type 是一个对象: 此对象下的 $$typeof 属性区别于 createElement 的 $$typeof 属性
   const loadFn = load;
-
   return function(): Block<Props> {
     const args: Args = arguments;
 
