@@ -6,12 +6,14 @@
  *
  * @flow
  */
-
+// == '17.0.0-alpha.0'
 import ReactVersion from 'shared/ReactVersion';
 import {
+  // == React.Fragment
   REACT_FRAGMENT_TYPE,
   REACT_DEBUG_TRACING_MODE_TYPE,
   REACT_PROFILER_TYPE,
+  // == 过期函数提醒
   REACT_STRICT_MODE_TYPE,
   REACT_SUSPENSE_TYPE,
   REACT_SUSPENSE_LIST_TYPE,
@@ -79,7 +81,9 @@ import {lazy} from './ReactLazy';
 */
 import {forwardRef} from './ReactForwardRef';
 
+// == 函数组件也有类似 PureComponent 的功能
 import {memo} from './ReactMemo';
+
 import {block} from './ReactBlock';
 
 // == ReactHooks 核心实现都是在 react-reconciler 库当中
