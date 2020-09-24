@@ -12,6 +12,8 @@ import ReactCurrentOwner from './ReactCurrentOwner';
 import ReactDebugCurrentFrame from './ReactDebugCurrentFrame';
 import IsSomeRendererActing from './IsSomeRendererActing';
 
+
+// == 暴露一些内部的方法
 const ReactSharedInternals = {
   ReactCurrentDispatcher,
   ReactCurrentBatchConfig,

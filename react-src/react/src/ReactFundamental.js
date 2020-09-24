@@ -13,6 +13,7 @@ import type {
 import {REACT_FUNDAMENTAL_TYPE} from 'shared/ReactSymbols';
 import {hasBadMapPolyfill} from './BadMapPolyfill';
 
+// == 对传入的 impl 参数做了一层包装和处理
 export function createFundamental<C, H>(
   impl: ReactFundamentalImpl<C, H>,
 ): ReactFundamentalComponent<C, H> {

@@ -114,9 +114,13 @@ import {
   cloneElementWithValidation,
 } from './ReactElementValidator';
 
+// == 对传入的 source 参数做了一层包装和处理
 import {createMutableSource} from './ReactMutableSource';
+// == 暴露一些内部的方法
 import ReactSharedInternals from './ReactSharedInternals';
+// == 对传入的 impl 参数做了一层包装和处理
 import {createFundamental} from './ReactFundamental';
+// == 尝试执行传入进来的 scope 函数, 有异常处理机制
 import {startTransition} from './ReactStartTransition';
 
 // TODO: Move this branching into the other module instead and just re-export.

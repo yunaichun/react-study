@@ -9,6 +9,8 @@
 
 import type {MutableSource, MutableSourceGetVersionFn} from 'shared/ReactTypes';
 
+
+// == 对传入的 source 参数做了一层包装和处理
 export function createMutableSource<Source: $NonMaybeType<mixed>>(
   source: Source,
   getVersion: MutableSourceGetVersionFn,
