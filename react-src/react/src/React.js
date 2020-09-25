@@ -27,6 +27,19 @@ import {Component, PureComponent} from './ReactBaseClasses';
 // == createRef 会创建一个对象，对象上会包含 current 属性，初始为 null
 import {createRef} from './ReactCreateRef';
 
+/* == 对 React Children Elements 的操作
+  function ChildrenDemo(props) {
+    console.log(props.children)
+    console.log(React.Children.map(props.children, c => [c, [c, c]]))
+    return props.children
+  }
+  const Parent = () => (
+    <ChildrenDemo>
+      <span>1</span>
+      <span>2</span>
+    </ChildrenDemo>
+  )
+*/
 import {forEach, map, count, toArray, only} from './ReactChildren';
 
 // == createElement 创建元素对象: 即 bebel 解析 JSX 最后形成实际的内容
