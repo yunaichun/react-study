@@ -42,8 +42,10 @@ const ReactCurrentOwner = ReactSharedInternals.ReactCurrentOwner;
 let topLevelUpdateWarnings;
 let warnedAboutHydrateAPI = false;
 
+// == 开发环境: 顶层容器校验
 if (__DEV__) {
   topLevelUpdateWarnings = (container: Container) => {
+    // == 顶层容器不是注释节点，且是 _reactRootContainer 容器
     if (container._reactRootContainer && container.nodeType !== COMMENT_NODE) {
       const hostInstance = findHostInstanceWithNoPortals(
         container._reactRootContainer._internalRoot.current,
@@ -89,6 +91,10 @@ if (__DEV__) {
   };
 }
 
+/* // == 获取容器内的根节点
+ container - 容器
+ forceHydrate - 是否复用已经存在的 dom 节点【服务端渲染为 true】
+*/
 function getReactRootElementInContainer(container: any) {
   if (!container) {
     return null;
@@ -101,8 +107,14 @@ function getReactRootElementInContainer(container: any) {
   }
 }
 
+/* == 是否复用已经存在的 dom 节点
+ container - 容器
+ forceHydrate - 是否复用已经存在的 dom 节点【服务端渲染为 true】
+*/
 function shouldHydrateDueToLegacyHeuristic(container) {
+  // == 获取容器内的根节点
   const rootElement = getReactRootElementInContainer(container);
+  // == 服务端渲染的属性- ROOT_ATTRIBUTE_NAME
   return !!(
     rootElement &&
     rootElement.nodeType === ELEMENT_NODE &&
@@ -110,13 +122,20 @@ function shouldHydrateDueToLegacyHeuristic(container) {
   );
 }
 
+/* // == 在容器上创建 _reactRootContainer 属性 
+ container - 容器
+ forceHydrate - 是否复用已经存在的 dom 节点【服务端渲染为 true】
+*/
 function legacyCreateRootFromDOMContainer(
   container: Container,
   forceHydrate: boolean,
 ): RootType {
+  // == 服务端渲染 shouldHydrate 为 true
   const shouldHydrate =
     forceHydrate || shouldHydrateDueToLegacyHeuristic(container);
+  
   // First clear any existing content.
+  // == 非服务端渲染：将容器内的节点去不删除
   if (!shouldHydrate) {
     let warned = false;
     let rootSibling;
@@ -149,6 +168,7 @@ function legacyCreateRootFromDOMContainer(
     }
   }
 
+  // == 返回 createLegacyRoot 方法
   return createLegacyRoot(
     container,
     shouldHydrate
@@ -172,6 +192,13 @@ function warnOnInvalidCallback(callback: mixed, callerName: string): void {
   }
 }
 
+/* // == render 内部调用的方法
+ parentComponent - 父节点
+ children - 子节点
+ container - 容器
+ forceHydrate - 是否复用已经存在的 dom 节点【服务端渲染为 true】
+ callback - 更新完成之后的回调
+*/
 function legacyRenderSubtreeIntoContainer(
   parentComponent: ?React$Component<any, any>,
   children: ReactNodeList,
@@ -190,11 +217,14 @@ function legacyRenderSubtreeIntoContainer(
   let fiberRoot;
   if (!root) {
     // Initial mount
+    // == 在容器上创建 _reactRootContainer 属性 
     root = container._reactRootContainer = legacyCreateRootFromDOMContainer(
       container,
       forceHydrate,
     );
+    // == 创建 fiberRoot
     fiberRoot = root._internalRoot;
+    // == 回调函数
     if (typeof callback === 'function') {
       const originalCallback = callback;
       callback = function() {
@@ -203,6 +233,7 @@ function legacyRenderSubtreeIntoContainer(
       };
     }
     // Initial mount should not be batched.
+    // == 初始更新
     unbatchedUpdates(() => {
       updateContainer(children, fiberRoot, parentComponent, callback);
     });
@@ -284,16 +315,23 @@ export function hydrate(
   );
 }
 
+/* // == 接收三个参数
+ element - 渲染节点 
+ container - 挂载节点
+ callback - 回调
+*/
 export function render(
   element: React$Element<any>,
   container: Container,
   callback: ?Function,
 ) {
+  // == 判断是否是合法的容器节点
   invariant(
     isValidContainer(container),
     'Target container is not a DOM element.',
   );
   if (__DEV__) {
+    // == 被标记为容器的跟节点，但是其属性 _reactRootContainer 为 undefined
     const isModernRoot =
       isContainerMarkedAsRoot(container) &&
       container._reactRootContainer === undefined;
@@ -305,6 +343,9 @@ export function render(
       );
     }
   }
+
+  // == 最终调用 legacyRenderSubtreeIntoContainer
+  // == 第 1 和 4 个参数传入 null 和 undefined
   return legacyRenderSubtreeIntoContainer(
     null,
     element,

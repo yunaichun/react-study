@@ -17,6 +17,7 @@ export {
   version,
   findDOMNode,
   hydrate,
+  // == render 渲染
   render,
   unmountComponentAtNode,
   createRoot,

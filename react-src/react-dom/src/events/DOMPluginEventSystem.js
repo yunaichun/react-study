@@ -23,6 +23,7 @@ import type {Fiber} from 'react-reconciler/src/ReactInternalTypes';
 
 import {registrationNameDependencies, allNativeEvents} from './EventRegistry';
 import {
+  // == 是捕获阶段
   IS_CAPTURE_PHASE,
   IS_EVENT_HANDLE_NON_MANAGED_NODE,
   IS_NON_DELEGATED,
@@ -51,6 +52,7 @@ import {
   enableLegacyFBSupport,
   enableCreateEventHandleAPI,
   enableScopeAPI,
+  // == 默认为 true
   enableEagerRootListeners,
 } from 'shared/ReactFeatureFlags';
 import {
@@ -176,6 +178,7 @@ function extractEvents(
 }
 
 // List of events that need to be individually attached to media elements.
+// == 非委托事件
 export const mediaEventTypes: Array<DOMEventName> = [
   'abort',
   'canplay',
@@ -205,6 +208,7 @@ export const mediaEventTypes: Array<DOMEventName> = [
 // We should not delegate these events to the container, but rather
 // set them on the actual target element itself. This is primarily
 // because these events do not consistently bubble in the DOM.
+// == 非委托事件：我们不应该将这些事件委托给容器，而是将它们设置在实际的目标元素本身上。主要是因为这些事件在 DOM 中不会持续冒泡。
 export const nonDelegatedEvents: Set<DOMEventName> = new Set([
   'cancel',
   'close',
@@ -319,8 +323,11 @@ const listeningMarker =
     .toString(36)
     .slice(2);
 
+// == 根容器所有支持的事件：委托+非委托
 export function listenToAllSupportedEvents(rootContainerElement: EventTarget) {
+  // == 默认为 true
   if (enableEagerRootListeners) {
+    // == 只会被执行一次
     if ((rootContainerElement: any)[listeningMarker]) {
       // Performance optimization: don't iterate through events
       // for the same portal container or root node more than once.
@@ -329,7 +336,9 @@ export function listenToAllSupportedEvents(rootContainerElement: EventTarget) {
       return;
     }
     (rootContainerElement: any)[listeningMarker] = true;
+    // == 原生的事件绑定
     allNativeEvents.forEach(domEventName => {
+      // == 非委托事件：我们不应该将这些事件委托给容器，而是将它们设置在实际的目标元素本身上。主要是因为这些事件在 DOM 中不会持续冒泡。
       if (!nonDelegatedEvents.has(domEventName)) {
         listenToNativeEvent(
           domEventName,
@@ -338,6 +347,7 @@ export function listenToAllSupportedEvents(rootContainerElement: EventTarget) {
           null,
         );
       }
+      // == 委托事件
       listenToNativeEvent(
         domEventName,
         true,
@@ -348,9 +358,13 @@ export function listenToAllSupportedEvents(rootContainerElement: EventTarget) {
   }
 }
 
+// == 给容器绑定委托或非委托事件
 export function listenToNativeEvent(
+  // == 事件名称
   domEventName: DOMEventName,
+  // == 为 false 指的是非委托事件：我们不应该将这些事件委托给容器，而是将它们设置在实际的目标元素本身上。主要是因为这些事件在 DOM 中不会持续冒泡。
   isCapturePhaseListener: boolean,
+  // == 容器
   rootContainerElement: EventTarget,
   targetElement: Element | null,
   eventSystemFlags?: EventSystemFlags = 0,
@@ -360,6 +374,7 @@ export function listenToNativeEvent(
   // selectionchange needs to be attached to the document
   // otherwise it won't capture incoming events that are only
   // triggered on the document directly.
+  // == selectionchange需要附加到文档， 否则它不会捕获仅直接在文档上触发的传入事件。
   if (
     domEventName === 'selectionchange' &&
     (rootContainerElement: any).nodeType !== DOCUMENT_NODE
@@ -370,6 +385,8 @@ export function listenToNativeEvent(
   // register it to the root container. Otherwise, we should
   // register the event to the target element and mark it as
   // a non-delegated event.
+  // == 如果事件可以委托（或处于捕获阶段），则可以将其注册到根容器。
+  // == 否则，我们应该将事件注册到目标元素，并将其标记为未委派的事件。
   if (
     targetElement !== null &&
     !isCapturePhaseListener &&
@@ -384,29 +401,41 @@ export function listenToNativeEvent(
     // TODO: ideally, we'd eventually apply the same logic to all
     // events from the nonDelegatedEvents list. Then we can remove
     // this special case and use the same logic for all events.
+    // == 对于所有未委派的事件，除了滚动之外，我们还将其事件监听器/附加到其事件触发的各个元素上。
+    // == 这意味着我们可以跳过此步骤，因为事件侦听器先前已添加。
+    // == 但是，我们发生滚动事件，因为现实是任何元素都可以滚动。 
+    // == TODO：理想情况下，我们最终将对nonDelegatedEvents列表中的所有事件应用相同的逻辑。
+    // == 然后，我们可以删除这种特殊情况，并对所有事件使用相同的逻辑。
     if (domEventName !== 'scroll') {
       return;
     }
     eventSystemFlags |= IS_NON_DELEGATED;
     target = targetElement;
   }
+  // == 1. const internalEventHandlersKey = '__reactEvents$' + randomKey;
+  // == 2. return target[internalEventHandlersKey]
   const listenerSet = getEventListenerSet(target);
+  // == 返回 domEventName 冒泡或者捕获阶段组装后的事件名称
   const listenerSetKey = getListenerSetKey(
     domEventName,
     isCapturePhaseListener,
   );
   // If the listener entry is empty or we should upgrade, then
   // we need to trap an event listener onto the target.
+  // == 保证不会重复添加
   if (!listenerSet.has(listenerSetKey)) {
+    // == 捕获阶段: 0 | 4 默认还是为 4，即为 IS_CAPTURE_PHASE
     if (isCapturePhaseListener) {
       eventSystemFlags |= IS_CAPTURE_PHASE;
     }
+    // == 添加被困事件监听器
     addTrappedEventListener(
       target,
       domEventName,
       eventSystemFlags,
       isCapturePhaseListener,
     );
+    // == 存储事件名称，存储完成不会被重复添加
     listenerSet.add(listenerSetKey);
   }
 }
@@ -465,10 +494,15 @@ export function listenToReactEvent(
   }
 }
 
+// == 添加被困事件监听器：listenToNativeEvent -> addTrappedEventListener
 function addTrappedEventListener(
+  // == 目标元素
   targetContainer: EventTarget,
+  // == 事件名称
   domEventName: DOMEventName,
+  // == 0 | 4 = 4
   eventSystemFlags: EventSystemFlags,
+  // == 是否是捕获阶段
   isCapturePhaseListener: boolean,
   isDeferredListenerForLegacyFBSupport?: boolean,
 ) {
@@ -1046,6 +1080,7 @@ export function accumulateEventHandleNonManagedNodeListeners(
   }
 }
 
+// == 返回 domEventName 冒泡或者捕获阶段组装后的事件名称
 export function getListenerSetKey(
   domEventName: DOMEventName,
   capture: boolean,

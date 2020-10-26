@@ -50,6 +50,8 @@ export function precacheFiberNode(
   (node: any)[internalInstanceKey] = hostInst;
 }
 
+// == 1. const internalContainerInstanceKey = '__reactContainer$' + randomKey;
+// == 2. container[internalContainerInstanceKey] = root.current;
 export function markContainerAsRoot(hostRoot: Fiber, node: Container): void {
   node[internalContainerInstanceKey] = hostRoot;
 }
@@ -58,6 +60,7 @@ export function unmarkContainerAsRoot(node: Container): void {
   node[internalContainerInstanceKey] = null;
 }
 
+// == 被标记为容器的跟节点
 export function isContainerMarkedAsRoot(node: Container): boolean {
   return !!node[internalContainerInstanceKey];
 }
@@ -196,6 +199,7 @@ export function updateFiberProps(
   (node: any)[internalPropsKey] = props;
 }
 
+// == 获取 node 节点事件监听列表
 export function getEventListenerSet(node: EventTarget): Set<string> {
   let elementListenerSet = (node: any)[internalEventHandlersKey];
   if (elementListenerSet === undefined) {

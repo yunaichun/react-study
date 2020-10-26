@@ -9,10 +9,12 @@
 
 import type {DOMEventName} from './DOMEventNames';
 
+// == 默认为 false
 import {enableCreateEventHandleAPI} from 'shared/ReactFeatureFlags';
 
 export const allNativeEvents: Set<DOMEventName> = new Set();
 
+// == beforeblur 和 afterblur 事件监听
 if (enableCreateEventHandleAPI) {
   allNativeEvents.add('beforeblur');
   allNativeEvents.add('afterblur');
@@ -40,6 +42,7 @@ export function registerTwoPhaseEvent(
   registerDirectEvent(registrationName + 'Capture', dependencies);
 }
 
+// == 注册直接事件
 export function registerDirectEvent(
   registrationName: string,
   dependencies: Array<DOMEventName>,
@@ -54,6 +57,7 @@ export function registerDirectEvent(
     }
   }
 
+  // == 注册依赖
   registrationNameDependencies[registrationName] = dependencies;
 
   if (__DEV__) {
@@ -65,6 +69,7 @@ export function registerDirectEvent(
     }
   }
 
+  // == 遍历添加所有的依赖
   for (let i = 0; i < dependencies.length; i++) {
     allNativeEvents.add(dependencies[i]);
   }

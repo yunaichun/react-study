@@ -63,11 +63,13 @@ function ReactDOMRoot(container: Container, options: void | RootOptions) {
   this._internalRoot = createRootImpl(container, ConcurrentRoot, options);
 }
 
+// == 此构造函数上挂载 _internalRoot 属性
 function ReactDOMBlockingRoot(
   container: Container,
   tag: RootTag,
   options: void | RootOptions,
 ) {
+  // == 最终的 fiberRoot 为 createRootImpl 函数
   this._internalRoot = createRootImpl(container, tag, options);
 }
 
@@ -117,12 +119,14 @@ ReactDOMRoot.prototype.unmount = ReactDOMBlockingRoot.prototype.unmount = functi
   });
 };
 
+// == 返回 fiberRoot， 即实例 this._internalRoot
 function createRootImpl(
   container: Container,
   tag: RootTag,
   options: void | RootOptions,
 ) {
   // Tag is either LegacyRoot or Concurrent Root
+  // == options 中过滤出服务端相关属性
   const hydrate = options != null && options.hydrate === true;
   const hydrationCallbacks =
     (options != null && options.hydrationOptions) || null;
@@ -131,16 +135,21 @@ function createRootImpl(
       options.hydrationOptions != null &&
       options.hydrationOptions.mutableSources) ||
     null;
+  // == 创建 root 
   const root = createContainer(container, tag, hydrate, hydrationCallbacks);
+  // == container 下的 __reactContainer$ 属性标记为 root.current
   markContainerAsRoot(root.current, container);
   const containerNodeType = container.nodeType;
 
+  // == 默认为 true
   if (enableEagerRootListeners) {
     const rootContainerElement =
       container.nodeType === COMMENT_NODE ? container.parentNode : container;
+    // == 根容器节点事件支持
     listenToAllSupportedEvents(rootContainerElement);
   } else {
     if (hydrate && tag !== LegacyRoot) {
+      // == 服务端渲染激活 container 的事件
       const doc =
         containerNodeType === DOCUMENT_NODE
           ? container
@@ -154,10 +163,12 @@ function createRootImpl(
       containerNodeType !== DOCUMENT_FRAGMENT_NODE &&
       containerNodeType !== DOCUMENT_NODE
     ) {
+      // == 激活 container 的 onMouseEnter 事件
       ensureListeningTo(container, 'onMouseEnter', null);
     }
   }
 
+  // == 服务端渲染相关
   if (mutableSources) {
     for (let i = 0; i < mutableSources.length; i++) {
       const mutableSource = mutableSources[i];
@@ -165,6 +176,7 @@ function createRootImpl(
     }
   }
 
+  // == 返回 root
   return root;
 }
 
@@ -192,6 +204,7 @@ export function createBlockingRoot(
   return new ReactDOMBlockingRoot(container, BlockingRoot, options);
 }
 
+// == legacyCreateRootFromDOMContainer 内部调用
 export function createLegacyRoot(
   container: Container,
   options?: RootOptions,
@@ -199,6 +212,7 @@ export function createLegacyRoot(
   return new ReactDOMBlockingRoot(container, LegacyRoot, options);
 }
 
+// == 判断是否是合法的容器节点
 export function isValidContainer(node: mixed): boolean {
   return !!(
     node &&
