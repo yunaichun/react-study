@@ -91,11 +91,13 @@ export function createEventListenerWrapper(
   );
 }
 
+// == 根据优先级创建事件监听 Wrapper
 export function createEventListenerWrapperWithPriority(
   targetContainer: EventTarget,
   domEventName: DOMEventName,
   eventSystemFlags: EventSystemFlags,
 ): Function {
+  // == 获取插件系统的事件优先级
   const eventPriority = getEventPriorityForPluginSystem(domEventName);
   let listenerWrapper;
   switch (eventPriority) {

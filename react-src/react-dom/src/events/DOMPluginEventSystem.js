@@ -49,6 +49,7 @@ import getListener from './getListener';
 import {passiveBrowserEventsSupported} from './checkPassiveEvents';
 
 import {
+  // == 默认为 false
   enableLegacyFBSupport,
   enableCreateEventHandleAPI,
   enableScopeAPI,
@@ -506,6 +507,7 @@ function addTrappedEventListener(
   isCapturePhaseListener: boolean,
   isDeferredListenerForLegacyFBSupport?: boolean,
 ) {
+  // == 根据优先级创建事件监听 listener
   let listener = createEventListenerWrapperWithPriority(
     targetContainer,
     domEventName,
@@ -514,6 +516,7 @@ function addTrappedEventListener(
   // If passive option is not supported, then the event will be
   // active and not passive.
   let isPassiveListener = undefined;
+  // == 默认为 false
   if (passiveBrowserEventsSupported) {
     // Browsers introduced an intervention, making these events
     // passive by default on document. React doesn't bind them
@@ -521,6 +524,8 @@ function addTrappedEventListener(
     // the performance wins from the change. So we emulate
     // the existing behavior manually on the roots now.
     // https://github.com/facebook/react/issues/19651
+    // == touchstart、touchmove、wheel 这几个事件 e.preventDefault() 失效
+    // == 需要在下面特殊处理
     if (
       domEventName === 'touchstart' ||
       domEventName === 'touchmove' ||
@@ -547,21 +552,26 @@ function addTrappedEventListener(
   // browsers do not support this today, and given this is
   // to support legacy code patterns, it's likely they'll
   // need support for such browsers.
+  // == 对初始 listener 进行一层包装
   if (enableLegacyFBSupport && isDeferredListenerForLegacyFBSupport) {
     const originalListener = listener;
     listener = function(...p) {
+      // == 先移除 targetContainer 的 domEventName 事件监听
       removeEventListener(
         targetContainer,
         domEventName,
         unsubscribeListener,
         isCapturePhaseListener,
       );
+      // == 再执行事件初始的事件监听 listener
       return originalListener.apply(this, p);
     };
   }
   // TODO: There are too many combinations here. Consolidate them.
   if (isCapturePhaseListener) {
+    // == 捕获阶段的事件
     if (isPassiveListener !== undefined) {
+      // == touchstart、touchmove、wheel 这几个事件
       unsubscribeListener = addEventCaptureListenerWithPassiveFlag(
         targetContainer,
         domEventName,
@@ -569,6 +579,7 @@ function addTrappedEventListener(
         isPassiveListener,
       );
     } else {
+      // == 非 touchstart、touchmove、wheel 这几个事件
       unsubscribeListener = addEventCaptureListener(
         targetContainer,
         domEventName,
@@ -576,7 +587,9 @@ function addTrappedEventListener(
       );
     }
   } else {
+    // == 冒泡阶段的事件
     if (isPassiveListener !== undefined) {
+      // == 非 touchstart、touchmove、wheel 这几个事件
       unsubscribeListener = addEventBubbleListenerWithPassiveFlag(
         targetContainer,
         domEventName,
@@ -584,6 +597,7 @@ function addTrappedEventListener(
         isPassiveListener,
       );
     } else {
+      // == 非 touchstart、touchmove、wheel 这几个事件
       unsubscribeListener = addEventBubbleListener(
         targetContainer,
         domEventName,
