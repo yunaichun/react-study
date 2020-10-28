@@ -177,6 +177,7 @@ function registerSimplePluginEventsAndSetTheirPriorities(
   }
 }
 
+/// == 批量设置事件的优先级
 function setEventPriorities(
   eventTypes: Array<DOMEventName>,
   priority: EventPriority,
@@ -186,6 +187,7 @@ function setEventPriorities(
   }
 }
 
+// == 获取插件系统的事件优先级
 export function getEventPriorityForPluginSystem(
   domEventName: DOMEventName,
 ): EventPriority {

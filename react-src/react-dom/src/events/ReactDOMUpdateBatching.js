@@ -21,26 +21,33 @@ import {enableDiscreteEventFlushingChange} from 'shared/ReactFeatureFlags';
 let batchedUpdatesImpl = function(fn, bookkeeping) {
   return fn(bookkeeping);
 };
+// == 返回 离散更新 接口
 let discreteUpdatesImpl = function(fn, a, b, c, d) {
   return fn(a, b, c, d);
 };
+// == 刷新离散更新接口：默认为空函数
 let flushDiscreteUpdatesImpl = function() {};
 let batchedEventUpdatesImpl = batchedUpdatesImpl;
 
 let isInsideEventHandler = false;
 let isBatchingEventUpdates = false;
 
+// == 完成事件绑定之后的调用
 function finishEventHandler() {
   // Here we wait until all updates have propagated, which is important
   // when using controlled components within layers:
   // https://github.com/facebook/react/issues/1698
   // Then we restore state of any controlled component.
+  // == 需要状态存储
   const controlledComponentsHavePendingUpdates = needsStateRestore();
   if (controlledComponentsHavePendingUpdates) {
     // If a controlled event was fired, we may need to restore the state of
     // the DOM node back to the controlled value. This is necessary when React
     // bails out of the update without touching the DOM.
+    // == 如果触发了受控事件，则可能需要恢复将DOM节点返回到受控值。这是必要的反应在不接触DOM的情况下退出更新。
+    // == 刷新离散更新接口：默认为空函数
     flushDiscreteUpdatesImpl();
+    // == 如果需要存储状态
     restoreStateIfNeeded();
   }
 }
@@ -75,20 +82,28 @@ export function batchedEventUpdates(fn, a, b) {
   }
 }
 
+// == 离散更新
 export function discreteUpdates(fn, a, b, c, d) {
+  // == 保存之前的值 false
   const prevIsInsideEventHandler = isInsideEventHandler;
   isInsideEventHandler = true;
   try {
+    // == 返回 离散更新 接口: fn(a, b, c, d)
     return discreteUpdatesImpl(fn, a, b, c, d);
   } finally {
+    // == 归为初始值 false
     isInsideEventHandler = prevIsInsideEventHandler;
+    // == isInsideEventHandler 在经历 discreteUpdatesImpl 函数之后假如为 false 的话
     if (!isInsideEventHandler) {
+      // == 完成事件绑定之后的调用
       finishEventHandler();
     }
   }
 }
 
 let lastFlushedEventTimeStamp = 0;
+
+// == 刷新离散更新（如果需要）
 export function flushDiscreteUpdatesIfNeeded(timeStamp: number) {
   if (enableDiscreteEventFlushingChange) {
     // event.timeStamp isn't overly reliable due to inconsistencies in
@@ -103,15 +118,21 @@ export function flushDiscreteUpdatesIfNeeded(timeStamp: number) {
     // such as if an earlier flush removes or adds event listeners that
     // are fired in the subsequent flush. However, this is the same
     // behaviour as we had before this change, so the risks are low.
+    // 由于历史上不同的浏览器提供时间戳的方式不一致，因此event.timeStamp不太可靠。一些浏览器为所有事件提供高分辨率时间戳，一些浏览器为所有事件提供低分辨率时间戳。 
+    // FF <52甚至将两个时间戳混合在一起。在某些情况下，某些浏览器甚至报告负时间戳或时间戳为0（iOS9）。鉴于我们仅比较两个相等的时间戳（！==），因此可以避免分辨率差异。
+    // 如果时间戳为0，则我们会避免阻止刷新，这会影响语义，例如较早的刷新移除或添加了在后续刷新中触发的事件侦听器。但是，这与更改之前的行为相同，因此风险较低
     if (
       !isInsideEventHandler &&
       (timeStamp === 0 || lastFlushedEventTimeStamp !== timeStamp)
     ) {
       lastFlushedEventTimeStamp = timeStamp;
+      // == 刷新离散更新接口：默认为空函数
       flushDiscreteUpdatesImpl();
     }
   } else {
+    // == isInsideEventHandler 默认为 false
     if (!isInsideEventHandler) {
+      // == 刷新离散更新接口：默认为空函数
       flushDiscreteUpdatesImpl();
     }
   }

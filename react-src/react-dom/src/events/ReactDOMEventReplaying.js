@@ -15,6 +15,7 @@ import type {FiberRoot} from 'react-reconciler/src/ReactInternalTypes';
 import type {LanePriority} from 'react-reconciler/src/ReactFiberLane';
 
 import {
+  // == __EXPERIMENTAL__
   enableSelectiveHydration,
   enableEagerRootListeners,
 } from 'shared/ReactFeatureFlags';
@@ -36,8 +37,10 @@ import {
 } from '../client/ReactDOMComponentTree';
 import {HostRoot, SuspenseComponent} from 'react-reconciler/src/ReactWorkTags';
 
+// == 尝试同步调和 fiber
 let attemptSynchronousHydration: (fiber: Object) => void;
 
+// == 设置同步调和函数
 export function setAttemptSynchronousHydration(fn: (fiber: Object) => void) {
   attemptSynchronousHydration = fn;
 }
@@ -98,6 +101,7 @@ type QueuedReplayableEvent = {|
 let hasScheduledReplayAttempt = false;
 
 // The queue of discrete events to be replayed.
+// == 离散事件队列
 const queuedDiscreteEvents: Array<QueuedReplayableEvent> = [];
 
 // Indicates if any continuous event targets are non-null for early bailout.
@@ -120,6 +124,7 @@ type QueuedHydrationTarget = {|
 |};
 const queuedExplicitHydrationTargets: Array<QueuedHydrationTarget> = [];
 
+// == 有 离散事件 队列
 export function hasQueuedDiscreteEvents(): boolean {
   return queuedDiscreteEvents.length > 0;
 }
@@ -128,6 +133,7 @@ export function hasQueuedContinuousEvents(): boolean {
   return hasAnyQueuedContinuousEvents;
 }
 
+// == 离散可重放事件
 const discreteReplayableEvents: Array<DOMEventName> = [
   'mousedown',
   'mouseup',
@@ -172,6 +178,7 @@ const continuousReplayableEvents: Array<DOMEventName> = [
   'lostpointercapture',
 ];
 
+// == eventType 是否是 离散可重放事件
 export function isReplayableDiscreteEvent(eventType: DOMEventName): boolean {
   return discreteReplayableEvents.indexOf(eventType) > -1;
 }
@@ -203,6 +210,7 @@ export function eagerlyTrapReplayableEvents(
   }
 }
 
+// == 创建排队可重播事件
 function createQueuedReplayableEvent(
   blockedOn: null | Container | SuspenseInstance,
   domEventName: DOMEventName,
@@ -219,6 +227,7 @@ function createQueuedReplayableEvent(
   };
 }
 
+// == 按照顺序执行离散事件队列
 export function queueDiscreteEvent(
   blockedOn: null | Container | SuspenseInstance,
   domEventName: DOMEventName,
@@ -226,6 +235,7 @@ export function queueDiscreteEvent(
   targetContainer: EventTarget,
   nativeEvent: AnyNativeEvent,
 ): void {
+  // == 创建排队可重播事件
   const queuedEvent = createQueuedReplayableEvent(
     blockedOn,
     domEventName,
@@ -233,19 +243,26 @@ export function queueDiscreteEvent(
     targetContainer,
     nativeEvent,
   );
+  // == 离散事件队列
   queuedDiscreteEvents.push(queuedEvent);
+  // == __EXPERIMENTAL__
   if (enableSelectiveHydration) {
     if (queuedDiscreteEvents.length === 1) {
       // If this was the first discrete event, we might be able to
       // synchronously unblock it so that preventDefault still works.
+      // == 如果这是第一个离散事件，我们也许可以同步解除它，这样 preventDefault 仍然有效。
       while (queuedEvent.blockedOn !== null) {
+        // == 从目标节点获取 fiber 实例
         const fiber = getInstanceFromNode(queuedEvent.blockedOn);
         if (fiber === null) {
           break;
         }
+        // == 尝试同步调和
         attemptSynchronousHydration(fiber);
+        // == 调和之后假如 queuedEvent.blockedOn 为 null
         if (queuedEvent.blockedOn === null) {
           // We got unblocked by hydration. Let's try again.
+          // == 调和后 未阻止的事件再次调用
           replayUnblockedEvents();
           // If we're reblocked, on an inner boundary, we might need
           // to attempt hydrating that one.
@@ -253,6 +270,7 @@ export function queueDiscreteEvent(
         } else {
           // We're still blocked from hydration, we have to give up
           // and replay later.
+          // == queuedEvent.blockedOn 不为 null 即停止
           break;
         }
       }
@@ -522,6 +540,7 @@ function attemptReplayContinuousQueuedEventInMap(
   }
 }
 
+// == 调和后 未阻止的事件再次调用
 function replayUnblockedEvents() {
   hasScheduledReplayAttempt = false;
   // First replay discrete events.

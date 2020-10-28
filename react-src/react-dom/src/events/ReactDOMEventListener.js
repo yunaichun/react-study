@@ -39,13 +39,18 @@ import getEventTarget from './getEventTarget';
 import {getClosestInstanceFromNode} from '../client/ReactDOMComponentTree';
 
 import {
+  // == false
   enableLegacyFBSupport,
+  // == true
   enableEagerRootListeners,
   decoupleUpdatePriorityFromScheduler,
 } from 'shared/ReactFeatureFlags';
 import {
+  // == 1
   UserBlockingEvent,
+  // == 2
   ContinuousEvent,
+  // == 0
   DiscreteEvent,
 } from 'shared/ReactTypes';
 import {getEventPriorityForPluginSystem} from './DOMEventProperties';
@@ -101,17 +106,21 @@ export function createEventListenerWrapperWithPriority(
   const eventPriority = getEventPriorityForPluginSystem(domEventName);
   let listenerWrapper;
   switch (eventPriority) {
+    // == 0
     case DiscreteEvent:
       listenerWrapper = dispatchDiscreteEvent;
       break;
+    // == 1
     case UserBlockingEvent:
       listenerWrapper = dispatchUserBlockingUpdate;
       break;
+    // == 2
     case ContinuousEvent:
     default:
       listenerWrapper = dispatchEvent;
       break;
   }
+  // == 返回 listenerWrapper 函数
   return listenerWrapper.bind(
     null,
     domEventName,
@@ -120,21 +129,26 @@ export function createEventListenerWrapperWithPriority(
   );
 }
 
+// == 事件优先级为 0 的事件监听
 function dispatchDiscreteEvent(
   domEventName,
   eventSystemFlags,
   container,
   nativeEvent,
 ) {
+  // == enableLegacyFBSupport 默认为 false
   if (
     !enableLegacyFBSupport ||
     // If we are in Legacy FB support mode, it means we've already
     // flushed for this event and we don't need to do it again.
     (eventSystemFlags & IS_LEGACY_FB_SUPPORT_MODE) === 0
   ) {
+    // == 刷新离散更新（如果需要）
     flushDiscreteUpdatesIfNeeded(nativeEvent.timeStamp);
   }
+  // == 离散更新: dispatchEvent(domEventName, eventSystemFlags, container, nativeEvent)
   discreteUpdates(
+    // == 事件优先级为 2 的事件监听
     dispatchEvent,
     domEventName,
     eventSystemFlags,
@@ -143,6 +157,7 @@ function dispatchDiscreteEvent(
   );
 }
 
+// == 事件优先级为 1 的事件监听
 function dispatchUserBlockingUpdate(
   domEventName,
   eventSystemFlags,
@@ -181,16 +196,19 @@ function dispatchUserBlockingUpdate(
   }
 }
 
+// == 事件优先级为 2 的事件监听
 export function dispatchEvent(
   domEventName: DOMEventName,
   eventSystemFlags: EventSystemFlags,
   targetContainer: EventTarget,
   nativeEvent: AnyNativeEvent,
 ): void {
+  // == _enabled 默认为 true
   if (!_enabled) {
     return;
   }
   let allowReplay = true;
+  // == 默认为 true
   if (enableEagerRootListeners) {
     // TODO: replaying capture phase events is currently broken
     // because we used to do it during top-level native bubble handlers
@@ -202,12 +220,15 @@ export function dispatchEvent(
   }
   if (
     allowReplay &&
+    // == 有 离散事件 队列
     hasQueuedDiscreteEvents() &&
+    // == domEventName 是否是 离散可重放事件
     isReplayableDiscreteEvent(domEventName)
   ) {
     // If we already have a queue of discrete events, and this is another discrete
     // event, then we can't dispatch it regardless of its target, since they
     // need to dispatch in order.
+    // == 按照顺序执行离散事件队列
     queueDiscreteEvent(
       null, // Flags that we're not actually blocked on anything as far as we know.
       domEventName,

@@ -88,6 +88,7 @@ export type RefObject = {|
 
 export type EventPriority = 0 | 1 | 2;
 
+// == 事件类型
 export const DiscreteEvent: EventPriority = 0;
 export const UserBlockingEvent: EventPriority = 1;
 export const ContinuousEvent: EventPriority = 2;

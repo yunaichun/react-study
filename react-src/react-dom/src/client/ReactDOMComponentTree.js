@@ -151,6 +151,7 @@ export function getClosestInstanceFromNode(targetNode: Node): null | Fiber {
  * Given a DOM node, return the ReactDOMComponent or ReactDOMTextComponent
  * instance, or null if the node was not rendered by this React.
  */
+// == 从目标节点获取 fiber 实例
 export function getInstanceFromNode(node: Node): Fiber | null {
   const inst =
     (node: any)[internalInstanceKey] ||
@@ -186,6 +187,7 @@ export function getNodeFromInstance(inst: Fiber): Instance | TextInstance {
   invariant(false, 'getNodeFromInstance: Invalid argument.');
 }
 
+// == 从目标节点获取 Fiber 当前的属性
 export function getFiberCurrentPropsFromNode(
   node: Instance | TextInstance | SuspenseInstance,
 ): Props {
