@@ -43,6 +43,7 @@ import {
   enableLegacyFBSupport,
   // == true
   enableEagerRootListeners,
+  // == false
   decoupleUpdatePriorityFromScheduler,
 } from 'shared/ReactFeatureFlags';
 import {
@@ -164,11 +165,15 @@ function dispatchUserBlockingUpdate(
   container,
   nativeEvent,
 ) {
+  // ==  默认为 false
   if (decoupleUpdatePriorityFromScheduler) {
+    // == 获取更新优先级
     const previousPriority = getCurrentUpdateLanePriority();
     try {
       // TODO: Double wrapping is necessary while we decouple Scheduler priority.
+      // == 设置更新优先级 【react-reconciler/src/ReactFiberLane】
       setCurrentUpdateLanePriority(InputContinuousLanePriority);
+      // == 调度【scheduler】
       runWithPriority(
         UserBlockingPriority,
         dispatchEvent.bind(
@@ -180,9 +185,11 @@ function dispatchUserBlockingUpdate(
         ),
       );
     } finally {
+      // == 设置更新优先级 【react-reconciler/src/ReactFiberLane】
       setCurrentUpdateLanePriority(previousPriority);
     }
   } else {
+    // == 调度【scheduler】
     runWithPriority(
       UserBlockingPriority,
       dispatchEvent.bind(

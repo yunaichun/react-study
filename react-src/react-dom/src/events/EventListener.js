@@ -7,6 +7,7 @@
  * @flow
  */
 
+ // == 冒泡阶段的事件: 非 touchstart、touchmove、wheel 这几个事件
 export function addEventBubbleListener(
   target: EventTarget,
   eventType: string,
@@ -16,6 +17,7 @@ export function addEventBubbleListener(
   return listener;
 }
 
+// == 捕获阶段的事件: 非 touchstart、touchmove、wheel 这几个事件
 export function addEventCaptureListener(
   target: EventTarget,
   eventType: string,
@@ -25,6 +27,7 @@ export function addEventCaptureListener(
   return listener;
 }
 
+// == 捕获阶段的事件: touchstart、touchmove、wheel 这几个事件
 export function addEventCaptureListenerWithPassiveFlag(
   target: EventTarget,
   eventType: string,
@@ -38,6 +41,7 @@ export function addEventCaptureListenerWithPassiveFlag(
   return listener;
 }
 
+// == 冒泡阶段的事件: touchstart、touchmove、wheel 这几个事件
 export function addEventBubbleListenerWithPassiveFlag(
   target: EventTarget,
   eventType: string,
@@ -50,6 +54,7 @@ export function addEventBubbleListenerWithPassiveFlag(
   return listener;
 }
 
+// == 移除事件监听 listener
 export function removeEventListener(
   target: EventTarget,
   eventType: string,

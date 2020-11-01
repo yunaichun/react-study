@@ -589,7 +589,7 @@ function addTrappedEventListener(
   } else {
     // == 冒泡阶段的事件
     if (isPassiveListener !== undefined) {
-      // == 非 touchstart、touchmove、wheel 这几个事件
+      // == touchstart、touchmove、wheel 这几个事件
       unsubscribeListener = addEventBubbleListenerWithPassiveFlag(
         targetContainer,
         domEventName,
