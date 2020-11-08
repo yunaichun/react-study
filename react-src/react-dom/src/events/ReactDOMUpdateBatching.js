@@ -18,6 +18,7 @@ import {enableDiscreteEventFlushingChange} from 'shared/ReactFeatureFlags';
 // scheduled work and instead do synchronous work.
 
 // Defaults
+// == 执行 fn 传入 bookkeeping
 let batchedUpdatesImpl = function(fn, bookkeeping) {
   return fn(bookkeeping);
 };
@@ -52,6 +53,7 @@ function finishEventHandler() {
   }
 }
 
+// == 执行 fn 传入 bookkeeping
 export function batchedUpdates(fn, bookkeeping) {
   if (isInsideEventHandler) {
     // If we are currently inside another batch, we need to wait until it
@@ -60,13 +62,16 @@ export function batchedUpdates(fn, bookkeeping) {
   }
   isInsideEventHandler = true;
   try {
+    // == 执行 fn 传入 bookkeeping
     return batchedUpdatesImpl(fn, bookkeeping);
   } finally {
     isInsideEventHandler = false;
+    // == 完成事件绑定之后的调用
     finishEventHandler();
   }
 }
 
+// == 执行 fn 传入 a, b
 export function batchedEventUpdates(fn, a, b) {
   if (isBatchingEventUpdates) {
     // If we are currently inside another batch, we need to wait until it
@@ -78,6 +83,7 @@ export function batchedEventUpdates(fn, a, b) {
     return batchedEventUpdatesImpl(fn, a, b);
   } finally {
     isBatchingEventUpdates = false;
+    // == 完成事件绑定之后的调用
     finishEventHandler();
   }
 }

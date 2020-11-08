@@ -31,6 +31,7 @@ import {
 
 import {
   HostRoot,
+  // == 4
   HostPortal,
   HostComponent,
   HostText,
@@ -283,6 +284,7 @@ function dispatchEventsForPlugins(
   targetInst: null | Fiber,
   targetContainer: EventTarget,
 ): void {
+  // == 获取事件 target
   const nativeEventTarget = getEventTarget(nativeEvent);
   const dispatchQueue: DispatchQueue = [];
   extractEvents(
@@ -607,6 +609,7 @@ function addTrappedEventListener(
   }
 }
 
+// == 点击事件
 function deferClickToDocumentForLegacyFBSupport(
   domEventName: DOMEventName,
   targetContainer: EventTarget,
@@ -615,6 +618,7 @@ function deferClickToDocumentForLegacyFBSupport(
   // This means we add a one time event listener to trigger
   // after the FB delegated listeners fire.
   const isDeferredListenerForLegacyFBSupport = true;
+  // == 添加被困事件监听器：listenToNativeEvent -> addTrappedEventListener
   addTrappedEventListener(
     targetContainer,
     domEventName,
@@ -624,6 +628,7 @@ function deferClickToDocumentForLegacyFBSupport(
   );
 }
 
+// == 两个节点是否匹配
 function isMatchingRootContainer(
   grandContainer: Element,
   targetContainer: EventTarget,
@@ -635,6 +640,7 @@ function isMatchingRootContainer(
   );
 }
 
+// == 对插件事件系统派发事件
 export function dispatchEventForPluginEventSystem(
   domEventName: DOMEventName,
   eventSystemFlags: EventSystemFlags,
@@ -642,7 +648,9 @@ export function dispatchEventForPluginEventSystem(
   targetInst: null | Fiber,
   targetContainer: EventTarget,
 ): void {
+  // == 从 targetNode 节点开始一直向上获取最近的 Fiber 实例
   let ancestorInst = targetInst;
+  
   if (
     (eventSystemFlags & IS_EVENT_HANDLE_NON_MANAGED_NODE) === 0 &&
     (eventSystemFlags & IS_NON_DELEGATED) === 0
@@ -652,6 +660,7 @@ export function dispatchEventForPluginEventSystem(
     // If we are using the legacy FB support flag, we
     // defer the event to the null with a one
     // time event listener so we can defer the event.
+    // == click 事件
     if (
       enableLegacyFBSupport &&
       // If our event flags match the required flags for entering
@@ -662,9 +671,14 @@ export function dispatchEventForPluginEventSystem(
       domEventName === 'click' &&
       (eventSystemFlags & SHOULD_NOT_DEFER_CLICK_FOR_FB_SUPPORT_MODE) === 0
     ) {
+      // == 点击事件
       deferClickToDocumentForLegacyFBSupport(domEventName, targetContainer);
       return;
     }
+
+    // == targetInst 存在 : 
+    // == 1. 目的是找到 ancestorInst（node = ancestorInst = parentNode）
+    // == 2. 内部 return
     if (targetInst !== null) {
       // The below logic attempts to work out if we need to change
       // the target fiber to a different ancestor. We had similar logic
@@ -679,24 +693,31 @@ export function dispatchEventForPluginEventSystem(
       // sub-tree for that root and make that our ancestor instance.
       let node = targetInst;
 
+      // == 循环遍历 node 的 return 属性 : node = ancestorInst = parentNode
       mainLoop: while (true) {
         if (node === null) {
           return;
         }
         const nodeTag = node.tag;
+        // == 节点为 HostRoot 或 HostPortal
         if (nodeTag === HostRoot || nodeTag === HostPortal) {
           let container = node.stateNode.containerInfo;
           if (isMatchingRootContainer(container, targetContainerNode)) {
+            // == 与 targetContainerNode 相同则整个大的循环结束
             break;
           }
+
+          // == 节点是 HostPortal : 循环遍历当前节点的 return 属性
           if (nodeTag === HostPortal) {
             // The target is a portal, but it's not the rootContainer we're looking for.
             // Normally portals handle their own events all the way down to the root.
             // So we should be able to stop now. However, we don't know if this portal
             // was part of *our* root.
+            // == 循环遍历直到 node 节点的 return 属性直到为 null
             let grandNode = node.return;
             while (grandNode !== null) {
               const grandTag = grandNode.tag;
+              // == 节点为 HostRoot 和 HostPortal ，且与 targetContainerNode 相同终止循环
               if (grandTag === HostRoot || grandTag === HostPortal) {
                 const grandContainer = grandNode.stateNode.containerInfo;
                 if (
@@ -705,23 +726,29 @@ export function dispatchEventForPluginEventSystem(
                   // This is the rootContainer we're looking for and we found it as
                   // a parent of the Portal. That means we can ignore it because the
                   // Portal will bubble through to us.
+                  // == 与 targetContainerNode 相同则整个大的循环结束
                   return;
                 }
               }
               grandNode = grandNode.return;
             }
           }
+
           // Now we need to find it's corresponding host fiber in the other
           // tree. To do this we can use getClosestInstanceFromNode, but we
           // need to validate that the fiber is a host instance, otherwise
           // we need to traverse up through the DOM till we find the correct
           // node that is from the other tree.
+          // == 节点是 HostRoot : 循环遍历 container 的 parentNode 属性直到为 null
           while (container !== null) {
+            // == 从 container 节点开始一直向上获取最近的 Fiber 实例
             const parentNode = getClosestInstanceFromNode(container);
             if (parentNode === null) {
+              // == parentNode 为 null 相同则整个大的循环结束
               return;
             }
             const parentTag = parentNode.tag;
+            // == 如果 parentTag 为 HostComponent 或 HostText : 直接跳到下一步大循环
             if (parentTag === HostComponent || parentTag === HostText) {
               node = ancestorInst = parentNode;
               continue mainLoop;
@@ -734,6 +761,7 @@ export function dispatchEventForPluginEventSystem(
     }
   }
 
+  // == 执行 回调函数
   batchedEventUpdates(() =>
     dispatchEventsForPlugins(
       domEventName,

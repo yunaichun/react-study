@@ -302,7 +302,7 @@ export function dispatchEvent(
 
   // This is not replayable so we'll invoke it but without a target,
   // in case the event system needs to trace it.
-  // == 插件系统触发事件
+  // == 对插件事件系统派发事件
   dispatchEventForPluginEventSystem(
     domEventName,
     eventSystemFlags,
