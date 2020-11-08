@@ -14,6 +14,7 @@ import {TEXT_NODE} from '../shared/HTMLNodeType';
  * @param {object} nativeEvent Native browser event.
  * @return {DOMEventTarget} Target node.
  */
+// == 获取事件 target
 function getEventTarget(nativeEvent) {
   // Fallback to nativeEvent.srcElement for IE9
   // https://github.com/facebook/react/issues/12506
@@ -26,6 +27,7 @@ function getEventTarget(nativeEvent) {
 
   // Safari may fire events on text nodes (Node.TEXT_NODE is 3).
   // @see http://www.quirksmode.org/js/events_properties.html
+  // == 如果是文本节点则返回父节点
   return target.nodeType === TEXT_NODE ? target.parentNode : target;
 }
 

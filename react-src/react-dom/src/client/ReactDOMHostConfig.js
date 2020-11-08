@@ -51,8 +51,11 @@ import {
 } from '../events/ReactDOMEventListener';
 import {getChildNamespace} from '../shared/DOMNamespaces';
 import {
+  // == 1
   ELEMENT_NODE,
+  // == 3
   TEXT_NODE,
+  // == 8
   COMMENT_NODE,
   DOCUMENT_NODE,
   DOCUMENT_FRAGMENT_NODE,
@@ -813,33 +816,43 @@ export function getNextHydratableInstanceAfterSuspenseInstance(
 // Returns the SuspenseInstance if this node is a direct child of a
 // SuspenseInstance. I.e. if its previous sibling is a Comment with
 // SUSPENSE_x_START_DATA. Otherwise, null.
+// == 获取 targetInstance 的 ParentSuspenseInstance
 export function getParentSuspenseInstance(
   targetInstance: Node,
 ): null | SuspenseInstance {
+  // == 前一个兄弟节点
   let node = targetInstance.previousSibling;
   // Skip past all nodes within this suspense boundary.
   // There might be nested nodes so we need to keep track of how
   // deep we are and only break out when we're back on top.
   let depth = 0;
   while (node) {
+    // == 注释节点
     if (node.nodeType === COMMENT_NODE) {
+      // == 获取 node 节点上的 data 属性
       const data = ((node: any).data: string);
       if (
         data === SUSPENSE_START_DATA ||
         data === SUSPENSE_FALLBACK_START_DATA ||
         data === SUSPENSE_PENDING_START_DATA
       ) {
+        // == data 不为 SUSPENSE_END_DATA 的话
         if (depth === 0) {
+          // == depth 为 0 的情况: 返回 node 节点
           return ((node: any): SuspenseInstance);
         } else {
+          // == depth 自减
           depth--;
         }
       } else if (data === SUSPENSE_END_DATA) {
+        // == data 为 SUSPENSE_END_DATA 的话
         depth++;
       }
     }
+    // == 继续遍历前一个兄弟节点
     node = node.previousSibling;
   }
+  // == 否则返回 null
   return null;
 }
 

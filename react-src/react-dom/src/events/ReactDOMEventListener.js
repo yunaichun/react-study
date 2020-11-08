@@ -28,6 +28,8 @@ import {
   getContainerFromFiber,
   getSuspenseInstanceFromFiber,
 } from 'react-reconciler/src/ReactFiberTreeReflection';
+// == HostRoot : 3
+// == SuspenseComponent : 13
 import {HostRoot, SuspenseComponent} from 'react-reconciler/src/ReactWorkTags';
 import {
   type EventSystemFlags,
@@ -61,9 +63,9 @@ import {
   discreteUpdates,
 } from './ReactDOMUpdateBatching';
 import {
-  InputContinuousLanePriority,
   getCurrentUpdateLanePriority,
   setCurrentUpdateLanePriority,
+  InputContinuousLanePriority,
 } from 'react-reconciler/src/ReactFiberLane';
 
 const {
@@ -246,6 +248,7 @@ export function dispatchEvent(
     return;
   }
 
+  // == 无离散队列的情况
   const blockedOn = attemptToDispatchEvent(
     domEventName,
     eventSystemFlags,
@@ -253,17 +256,23 @@ export function dispatchEvent(
     nativeEvent,
   );
 
+  // == blockedOn 为 null
   if (blockedOn === null) {
     // We successfully dispatched this event.
+    // == 允许 allowReplay
     if (allowReplay) {
+      // == 如果继续的事件清楚掉
       clearIfContinuousEvent(domEventName, nativeEvent);
     }
     return;
   }
 
+  // == 允许 allowReplay
   if (allowReplay) {
+    // == domEventName 是可以 replay 的事件
     if (isReplayableDiscreteEvent(domEventName)) {
       // This this to be replayed later once the target is available.
+      // == 重新调用 queueDiscreteEvent 事件
       queueDiscreteEvent(
         blockedOn,
         domEventName,
@@ -273,6 +282,7 @@ export function dispatchEvent(
       );
       return;
     }
+    // == 队列里有继续的事件：终止
     if (
       queueIfContinuousEvent(
         blockedOn,
@@ -286,11 +296,13 @@ export function dispatchEvent(
     }
     // We need to clear only if we didn't queue because
     // queueing is accummulative.
+    // == 如果继续的事件清楚掉
     clearIfContinuousEvent(domEventName, nativeEvent);
   }
 
   // This is not replayable so we'll invoke it but without a target,
   // in case the event system needs to trace it.
+  // == 插件系统触发事件
   dispatchEventForPluginEventSystem(
     domEventName,
     eventSystemFlags,
@@ -301,6 +313,7 @@ export function dispatchEvent(
 }
 
 // Attempt dispatching an event. Returns a SuspenseInstance or Container if it's blocked.
+// == 尝试派发事件
 export function attemptToDispatchEvent(
   domEventName: DOMEventName,
   eventSystemFlags: EventSystemFlags,
@@ -308,19 +321,26 @@ export function attemptToDispatchEvent(
   nativeEvent: AnyNativeEvent,
 ): null | Container | SuspenseInstance {
   // TODO: Warn if _enabled is false.
-
+  // == 获取事件 target
   const nativeEventTarget = getEventTarget(nativeEvent);
+  // == 从 targetNode 节点开始一直向上获取最近的 Fiber 实例
   let targetInst = getClosestInstanceFromNode(nativeEventTarget);
 
+  // == 存在 Fiber 实例
   if (targetInst !== null) {
+    // == 获取最近挂载的 Fiber 实例: 'react-reconciler/src/ReactFiberTreeReflection'
     const nearestMounted = getNearestMountedFiber(targetInst);
     if (nearestMounted === null) {
       // This tree has been unmounted already. Dispatch without a target.
+      // == DOM 树还没有被挂载 targetInst 设置为 null
       targetInst = null;
     } else {
       const tag = nearestMounted.tag;
+      // == 挂载的是 SuspenseComponent
       if (tag === SuspenseComponent) {
-        const instance = getSuspenseInstanceFromFiber(nearestMounted);
+        // == 从挂载的 Fiber 树上获取 SuspenseInstance : react-reconciler/src/ReactFiberTreeReflection'
+        const instance = getSuspenseInstanceFromFiber(SuspenseInstance);
+        // == 如果实例存在则返回此实例，否则 targetInst 为 null
         if (instance !== null) {
           // Queue the event to be replayed later. Abort dispatching since we
           // don't want this event dispatched twice through the event system.
@@ -332,15 +352,21 @@ export function attemptToDispatchEvent(
         // the whole system, dispatch the event without a target.
         // TODO: Warn.
         targetInst = null;
-      } else if (tag === HostRoot) {
+      }
+      // == 挂载的是 HostRoot 
+      else if (tag === HostRoot) {
+        // == 如果最近挂载的节点存在 stateNode，返回最近挂载的节点的容器，否则 targetInst 为 null
         const root: FiberRoot = nearestMounted.stateNode;
         if (root.hydrate) {
           // If this happens during a replay something went wrong and it might block
           // the whole system.
+          // == 从最近挂载的节点获取容器: 'react-reconciler/src/ReactFiberTreeReflection'
           return getContainerFromFiber(nearestMounted);
         }
         targetInst = null;
-      } else if (nearestMounted !== targetInst) {
+      }
+      // == 最近挂载的不是 targetInst
+      else if (nearestMounted !== targetInst) {
         // If we get an event (ex: img onload) before committing that
         // component's mount, ignore it for now (that is, treat it as if it was an
         // event on a non-React tree). We might also consider queueing events and

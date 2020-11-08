@@ -45,6 +45,7 @@ export function setAttemptSynchronousHydration(fn: (fiber: Object) => void) {
   attemptSynchronousHydration = fn;
 }
 
+// == 尝试调和
 let attemptUserBlockingHydration: (fiber: Object) => void;
 
 export function setAttemptUserBlockingHydration(fn: (fiber: Object) => void) {
@@ -500,9 +501,11 @@ export function queueExplicitHydrationTarget(target: Node): void {
   }
 }
 
+// == 尝试重新执行继续的队列事件
 function attemptReplayContinuousQueuedEvent(
   queuedEvent: QueuedReplayableEvent,
 ): boolean {
+  // == queuedEvent.blockedOn 不为 null
   if (queuedEvent.blockedOn !== null) {
     return false;
   }
@@ -545,46 +548,64 @@ function replayUnblockedEvents() {
   hasScheduledReplayAttempt = false;
   // First replay discrete events.
   while (queuedDiscreteEvents.length > 0) {
+    // = 取 queuedDiscreteEvents 的第一项
     const nextDiscreteEvent = queuedDiscreteEvents[0];
+    // == queuedDiscreteEvents 的第一项的 blockedOn 不为空
     if (nextDiscreteEvent.blockedOn !== null) {
       // We're still blocked.
       // Increase the priority of this boundary to unblock
       // the next discrete event.
+      // == 获取其 Fiber 实例
       const fiber = getInstanceFromNode(nextDiscreteEvent.blockedOn);
       if (fiber !== null) {
+        // == 尝试调和
         attemptUserBlockingHydration(fiber);
       }
       break;
     }
+    // == 取 nextDiscreteEvent 的 targetContainers
     const targetContainers = nextDiscreteEvent.targetContainers;
+    // == nextDiscreteEvent.blockedOn 为 null 到 nextDiscreteEvent.targetContainers 上去找
+    // == 目的是给 nextDiscreteEvent.blockedOn 赋值，不为 null
     while (targetContainers.length > 0) {
+      // = 取 targetContainers 的第一项
       const targetContainer = targetContainers[0];
+      // == 尝试派发事件
       const nextBlockedOn = attemptToDispatchEvent(
         nextDiscreteEvent.domEventName,
         nextDiscreteEvent.eventSystemFlags,
         targetContainer,
         nextDiscreteEvent.nativeEvent,
       );
+      // == nextBlockedOn 不为空的话
       if (nextBlockedOn !== null) {
         // We're still blocked. Try again later.
+        // == nextDiscreteEvent 的 blockedOn 属性设置为 nextBlockedOn
         nextDiscreteEvent.blockedOn = nextBlockedOn;
         break;
       }
       // This target container was successfully dispatched. Try the next.
+      // == 遍历进入到 targetContainers 的下一个
       targetContainers.shift();
     }
+    // == nextDiscreteEvent.blockedOn 为 null， nextDiscreteEvent.targetContainers 也为 null
+    // == 遍历进入到 queuedDiscreteEvents 的下一个 
     if (nextDiscreteEvent.blockedOn === null) {
       // We've successfully replayed the first event. Let's try the next one.
+      // == 遍历进入到 queuedDiscreteEvents 的下一个
       queuedDiscreteEvents.shift();
     }
   }
   // Next replay any continuous events.
+  // == focus
   if (queuedFocus !== null && attemptReplayContinuousQueuedEvent(queuedFocus)) {
     queuedFocus = null;
   }
+  // == drag
   if (queuedDrag !== null && attemptReplayContinuousQueuedEvent(queuedDrag)) {
     queuedDrag = null;
   }
+  // == mouse
   if (queuedMouse !== null && attemptReplayContinuousQueuedEvent(queuedMouse)) {
     queuedMouse = null;
   }

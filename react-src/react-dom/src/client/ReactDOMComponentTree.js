@@ -72,7 +72,11 @@ export function isContainerMarkedAsRoot(node: Container): boolean {
 // pass the Container node as the targetNode, you will not actually get the
 // HostRoot back. To get to the HostRoot, you need to pass a child of it.
 // The same thing applies to Suspense boundaries.
+// == 从 targetNode 节点开始一直向上获取最近的 Fiber 实例
+// == 1. 先父级节点的前一个兄弟节点依次遍历
+// == 2. 再向上一级父级节点继续遍历
 export function getClosestInstanceFromNode(targetNode: Node): null | Fiber {
+  // == targetNode 有 Fiber 实例属性的话则返回此实例
   let targetInst = (targetNode: any)[internalInstanceKey];
   if (targetInst) {
     // Don't return HostRoot or SuspenseComponent here.
@@ -80,7 +84,9 @@ export function getClosestInstanceFromNode(targetNode: Node): null | Fiber {
   }
   // If the direct event target isn't a React owned DOM node, we need to look
   // to see if one of its parents is a React owned DOM node.
+  // == targetNode 不是 React DOM 节点的话: 向上找找父节点
   let parentNode = targetNode.parentNode;
+  // == 直到 parentNode 为空
   while (parentNode) {
     // We'll check if this is a container root that could include
     // React nodes in the future. We need to check this first because
@@ -90,6 +96,7 @@ export function getClosestInstanceFromNode(targetNode: Node): null | Fiber {
     // itself because the fibers are conceptually between the container
     // node and the first child. It isn't surrounding the container node.
     // If it's not a container, we check if it's an instance.
+    // == targetInst 有 Fiber 实例属性的话进入下面的判断
     targetInst =
       (parentNode: any)[internalContainerInstanceKey] ||
       (parentNode: any)[internalInstanceKey];
@@ -109,13 +116,16 @@ export function getClosestInstanceFromNode(targetNode: Node): null | Fiber {
       // have one on the alternate so we need to check in case this was a
       // root.
       const alternate = targetInst.alternate;
+      // == targetInst 没有 child 子节点的话
       if (
         targetInst.child !== null ||
         (alternate !== null && alternate.child !== null)
       ) {
         // Next we need to figure out if the node that skipped past is
         // nested within a dehydrated boundary and if so, which one.
+        // == 此时为获取父节点的 Suspense 实例
         let suspenseInstance = getParentSuspenseInstance(targetNode);
+        // == 父节点的 Suspense 实例存在的话就一直进入的下面的循环
         while (suspenseInstance !== null) {
           // We found a suspense instance. That means that we haven't
           // hydrated it yet. Even though we leave the comments in the
@@ -125,6 +135,7 @@ export function getClosestInstanceFromNode(targetNode: Node): null | Fiber {
           // have had an internalInstanceKey on it.
           // Let's get the fiber associated with the SuspenseComponent
           // as the deepest instance.
+          // == 父节点的 Suspense 实例上的 internalInstanceKey 属性存在，直接返回，结束循环
           const targetSuspenseInst = suspenseInstance[internalInstanceKey];
           if (targetSuspenseInst) {
             return targetSuspenseInst;
@@ -133,14 +144,17 @@ export function getClosestInstanceFromNode(targetNode: Node): null | Fiber {
           // we haven't gotten to hydrate it yet. There might still be a
           // parent boundary that hasn't above this one so we need to find
           // the outer most that is known.
+          // == 否则继续遍历父节点的 Suspense 实例的【前一个兄弟节点】
           suspenseInstance = getParentSuspenseInstance(suspenseInstance);
           // If we don't find one, then that should mean that the parent
           // host component also hasn't hydrated yet. We can return it
           // below since it will bail out on the isMounted check later.
         }
       }
+      // == 返回 targetInst
       return targetInst;
     }
+    // == 向父级节点继续遍历
     targetNode = parentNode;
     parentNode = targetNode.parentNode;
   }
