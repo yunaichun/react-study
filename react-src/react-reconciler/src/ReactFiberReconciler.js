@@ -16,7 +16,7 @@ import {enableNewReconciler} from 'shared/ReactFeatureFlags';
 
 import {
   // == const root = createContainer(container, tag, hydrate, hydrationCallbacks)
-  // == 返回 fiberRoot
+  // == 返回 FiberRootNode 实例
   createContainer as createContainer_old,
   updateContainer as updateContainer_old,
   batchedEventUpdates as batchedEventUpdates_old,

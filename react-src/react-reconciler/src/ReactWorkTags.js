@@ -33,7 +33,7 @@ export type WorkTag =
   | 22
   | 23
   | 24;
-
+// == 创建 React 组件的类型
 export const FunctionComponent = 0;
 export const ClassComponent = 1;
 export const IndeterminateComponent = 2; // Before we know whether it is function or class

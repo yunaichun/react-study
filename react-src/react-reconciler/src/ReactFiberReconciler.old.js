@@ -239,13 +239,14 @@ function findHostInstanceWithWarning(
 }
 
 // == const root = createContainer(container, tag, hydrate, hydrationCallbacks)
-  // == 返回 fiberRoot
+// == 返回 FiberRootNode 实例
 export function createContainer(
   containerInfo: Container,
   tag: RootTag,
   hydrate: boolean,
   hydrationCallbacks: null | SuspenseHydrationCallbacks,
 ): OpaqueRoot {
+  // == 返回 FiberRootNode 实例
   return createFiberRoot(containerInfo, tag, hydrate, hydrationCallbacks);
 }
 

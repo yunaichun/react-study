@@ -26,7 +26,7 @@ import {unstable_getThreadID} from 'scheduler/tracing';
 import {initializeUpdateQueue} from './ReactUpdateQueue.old';
 import {LegacyRoot, BlockingRoot, ConcurrentRoot} from './ReactRootTags';
 
-// == FiberRootNode 构造函数属性
+// == FiberRootNode 构造函数
 function FiberRootNode(containerInfo, tag, hydrate) {
   this.tag = tag;
   this.containerInfo = containerInfo;
@@ -85,14 +85,14 @@ function FiberRootNode(containerInfo, tag, hydrate) {
   }
 }
 
-// == 创建 fiberRoot
+// == 返回 FiberRootNode 实例
 export function createFiberRoot(
   containerInfo: any,
   tag: RootTag,
   hydrate: boolean,
   hydrationCallbacks: null | SuspenseHydrationCallbacks,
 ): FiberRoot {
-  // == 实例 FiberRootNode
+  // == 实例 FiberRootNode: 为容器的实例
   const root: FiberRoot = (new FiberRootNode(containerInfo, tag, hydrate): any);
   if (enableSuspenseCallback) {
     root.hydrationCallbacks = hydrationCallbacks;
@@ -100,7 +100,10 @@ export function createFiberRoot(
 
   // Cyclic construction. This cheats the type system right now because
   // stateNode is any.
-  // == FiberRoot 的 current 属性挂载 未初始化 Fiber 创建 - createHostRootFiber
+  // == 返回 FiberNode: 为组件的实例
+  // == 1. 此函数的 stateNode 属性会存储 FiberRoot 实例
+  // == 2. 此函数会被挂载到 FiberRoot 的 current 属性上
+  // == tag 决定了 创建 FiberNode  的模式: ConcurrentMode、BlockingMode、StrictMode、NoMode
   const uninitializedFiber = createHostRootFiber(tag);
   root.current = uninitializedFiber;
   uninitializedFiber.stateNode = root;
@@ -108,6 +111,6 @@ export function createFiberRoot(
   // == 初始化更新队列
   initializeUpdateQueue(uninitializedFiber);
 
-  // == 返回 fiberRoot
+  // == 返回 FiberRootNode 实例
   return root;
 }

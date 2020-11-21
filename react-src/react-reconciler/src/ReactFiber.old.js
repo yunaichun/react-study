@@ -113,6 +113,7 @@ if (__DEV__) {
 
 let debugCounter = 1;
 
+// == FiberNode 构造函数
 function FiberNode(
   tag: WorkTag,
   pendingProps: mixed,
@@ -181,6 +182,7 @@ function FiberNode(
     this.treeBaseDuration = 0;
   }
 
+  // == 开发环境
   if (__DEV__) {
     // This isn't directly used but is handy for debugging internals:
     this._debugID = debugCounter++;
@@ -207,13 +209,16 @@ function FiberNode(
 //    is faster.
 // 5) It should be easy to port this to a C struct and keep a C implementation
 //    compatible.
+// == 返回 FiberNode 实例
+// == tag 决定了 创建 FiberNode  的模式: ConcurrentMode、BlockingMode、StrictMode、NoMode
 const createFiber = function(
   tag: WorkTag,
-  pendingProps: mixed,
-  key: null | string,
+  pendingProps: mixed, // == 初始为 null
+  key: null | string, // == 初始为 null
   mode: TypeOfMode,
 ): Fiber {
   // $FlowFixMe: the shapes are exact here but Flow doesn't like constructors
+  // == 返回 FiberNode 实例
   return new FiberNode(tag, pendingProps, key, mode);
 };
 
@@ -428,6 +433,9 @@ export function resetWorkInProgress(workInProgress: Fiber, renderLanes: Lanes) {
   return workInProgress;
 }
 
+// == 返回 FiberNode 实例
+// == 1. 此函数的 stateNode 属性会存储 FiberRoot 实例
+// == 2. 此函数会被挂载到 FiberRoot 的 current 属性上
 export function createHostRootFiber(tag: RootTag): Fiber {
   let mode;
   if (tag === ConcurrentRoot) {
@@ -445,6 +453,7 @@ export function createHostRootFiber(tag: RootTag): Fiber {
     mode |= ProfileMode;
   }
 
+  // == 返回 FiberNode 实例
   return createFiber(HostRoot, null, null, mode);
 }
 
