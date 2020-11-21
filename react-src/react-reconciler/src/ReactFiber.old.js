@@ -114,6 +114,9 @@ if (__DEV__) {
 let debugCounter = 1;
 
 // == FiberNode 构造函数
+// == 每个 ReactElement 对应一个 FiberNode
+// == 1. 记录节点的各种状态
+// == 2. 串联整个应用性成树结构
 function FiberNode(
   tag: WorkTag,
   pendingProps: mixed,
@@ -121,40 +124,69 @@ function FiberNode(
   mode: TypeOfMode,
 ) {
   // Instance
+  // == tag 记录的是 ReactElement 的类型
   this.tag = tag;
+  // == ReactElement里面的key
   this.key = key;
+  // == ReactElement.type，也就是我们调用`createElement`的第一个参数
   this.elementType = null;
+  // == 异步组件resolved之后返回的内容，一般是`function`或者`class`
   this.type = null;
+  // == FiberRootNode 构造函数
   this.stateNode = null;
 
   // Fiber
+  // == 每个 ReactElement 的 return 都会指向父节点
+  // == 当没有兄弟节点的时候就会返回父节点
+  // == 指向他在Fiber节点树中的`parent`，用来在处理完这个节点之后向上返回
   this.return = null;
+  // == 单链表树结构，指向自己的第一个子节点
+  // == 每个节点只会存第一个子节点
   this.child = null;
+  // == 指向自己的兄弟结，兄弟节点的 return 指向同一个父节点
   this.sibling = null;
   this.index = 0;
 
+  // == ref属性
   this.ref = null;
 
+  // == 新的变动带来的新的props
   this.pendingProps = pendingProps;
+  // == 上一次渲染完成之后的props
   this.memoizedProps = null;
+  // == 该 FiberNode 对应的组件产生的 Update 会存放在这个队列里面
+  // == setState 算出新的 state 就是存放在 updateQueue 中
   this.updateQueue = null;
+  // == 上一次渲染的时候的state
   this.memoizedState = null;
   this.dependencies = null;
 
+  // == 用来描述当前 FiberNode 和他子树的 `Bitfield`
+  // == 共存的模式表示这个子树是否默认是异步渲染的
+  // == FiberNode 被创建的时候他会继承父 FiberNode
+  // == 其他的标识也可以在创建的时候被设置
+  // == 但是在创建之后不应该再被修改，特别是他的子 FiberNode 创建之前
   this.mode = mode;
 
   // Effects
+  // == 用来记录下一个 Side Effect
   this.flags = NoFlags;
   this.nextEffect = null;
 
+  // == 子树中第一个 side effect
   this.firstEffect = null;
+  // == 子树中最后一个 side effect
   this.lastEffect = null;
 
   this.lanes = NoLanes;
   this.childLanes = NoLanes;
 
+  // == 在 Fiber 树更新的过程中，每个 Fiber 都会有一个跟其对应的 Fiber
+  // == 我们称他为 `current <==> workInProgress`
+  // == 在渲染完成之后他们会交换位置
   this.alternate = null;
 
+  // == 性能相关属性
   if (enableProfilerTimer) {
     // Note: The following is done to avoid a v8 performance cliff.
     //
@@ -209,7 +241,9 @@ function FiberNode(
 //    is faster.
 // 5) It should be easy to port this to a C struct and keep a C implementation
 //    compatible.
-// == 返回 FiberNode 实例
+// == 返回 FiberNode 实例；每个 ReactElement 对应一个 FiberNode
+// == 1. 记录节点的各种状态
+// == 2. 串联整个应用性成树结构
 // == tag 决定了 创建 FiberNode  的模式: ConcurrentMode、BlockingMode、StrictMode、NoMode
 const createFiber = function(
   tag: WorkTag,

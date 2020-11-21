@@ -29,19 +29,26 @@ import {LegacyRoot, BlockingRoot, ConcurrentRoot} from './ReactRootTags';
 // == FiberRootNode 构造函数
 function FiberRootNode(containerInfo, tag, hydrate) {
   this.tag = tag;
+  // == root节点，render方法接收的第二个参数
   this.containerInfo = containerInfo;
+  // == 只有在持久更新中会用到，也就是不支持增量更新的平台，react-dom不会用到
   this.pendingChildren = null;
-  // == 会被挂载 createHostRootFiber(tag) 值
+  // == FiberNode 构造函数，每个 ReactElement 对应一个 FiberNode
   this.current = null;
   this.pingCache = null;
+  // == 已经完成的任务的 FiberRootNode 对象, 如果只有一个 Root, 那他永远只可能是这个 Root 对应的 FiberRootNode, 或者是 null
+  // == 在 commit 阶段只会处理这个值对应的任务
   this.finishedWork = null;
+  // == 在任务被挂起的时候通过 setTimeout 设置的返回内容, 用来下一次如果有新的任务挂起时清理还没触发的 timeout
   this.timeoutHandle = noTimeout;
+  // == 顶层 context 对象，只有主动调用 `renderSubtreeIntoContainer` 时才会有用
   this.context = null;
   this.pendingContext = null;
+  // == 用来确定第一次渲染的时候是否需要融合
   this.hydrate = hydrate;
   this.callbackNode = null;
   this.callbackPriority = NoLanePriority;
-  // == eventTimes 、 expirationTimes 属性
+  // == 当前更新对应的过期时间
   // == NoLanePriority - 0、NoLanes - 0b0000000000000000000000000000000、NoTimestamp - -1
   this.eventTimes = createLaneMap(NoLanes);
   this.expirationTimes = createLaneMap(NoTimestamp);
