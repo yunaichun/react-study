@@ -120,6 +120,7 @@ type SharedQueue<State> = {|
   pending: Update<State> | null,
 |};
 
+// == UpdateQueue 对象上的属性
 export type UpdateQueue<State> = {|
   baseState: State,
   firstBaseUpdate: Update<State> | null,
@@ -149,6 +150,7 @@ if (__DEV__) {
   };
 }
 
+// == 初始化更新队列: FiberNode
 export function initializeUpdateQueue<State>(fiber: Fiber): void {
   const queue: UpdateQueue<State> = {
     baseState: fiber.memoizedState,
@@ -159,6 +161,7 @@ export function initializeUpdateQueue<State>(fiber: Fiber): void {
     },
     effects: null,
   };
+  // == 初始化时 this.updateQueue 的值为 uninitializedFiber
   fiber.updateQueue = queue;
 }
 

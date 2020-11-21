@@ -108,7 +108,8 @@ export function createFiberRoot(
   root.current = uninitializedFiber;
   uninitializedFiber.stateNode = root;
 
-  // == 初始化更新队列
+  // == 初始化更新队列: FiberNode
+  // == FiberNode.updateQueue = queue 【其中 queue.baseState = FiberNode.memoizedState】
   initializeUpdateQueue(uninitializedFiber);
 
   // == 返回 FiberRootNode 实例
