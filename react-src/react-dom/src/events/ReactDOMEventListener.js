@@ -375,6 +375,8 @@ export function attemptToDispatchEvent(
       }
     }
   }
+
+  // == 对插件事件系统派发事件
   dispatchEventForPluginEventSystem(
     domEventName,
     eventSystemFlags,

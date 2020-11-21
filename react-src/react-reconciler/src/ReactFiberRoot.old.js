@@ -26,10 +26,12 @@ import {unstable_getThreadID} from 'scheduler/tracing';
 import {initializeUpdateQueue} from './ReactUpdateQueue.old';
 import {LegacyRoot, BlockingRoot, ConcurrentRoot} from './ReactRootTags';
 
+// == FiberRootNode 构造函数属性
 function FiberRootNode(containerInfo, tag, hydrate) {
   this.tag = tag;
   this.containerInfo = containerInfo;
   this.pendingChildren = null;
+  // == 会被挂载 createHostRootFiber(tag) 值
   this.current = null;
   this.pingCache = null;
   this.finishedWork = null;
@@ -39,6 +41,8 @@ function FiberRootNode(containerInfo, tag, hydrate) {
   this.hydrate = hydrate;
   this.callbackNode = null;
   this.callbackPriority = NoLanePriority;
+  // == eventTimes 、 expirationTimes 属性
+  // == NoLanePriority - 0、NoLanes - 0b0000000000000000000000000000000、NoTimestamp - -1
   this.eventTimes = createLaneMap(NoLanes);
   this.expirationTimes = createLaneMap(NoTimestamp);
 
@@ -65,6 +69,7 @@ function FiberRootNode(containerInfo, tag, hydrate) {
     this.hydrationCallbacks = null;
   }
 
+  // == 测试环境
   if (__DEV__) {
     switch (tag) {
       case BlockingRoot:
@@ -80,12 +85,14 @@ function FiberRootNode(containerInfo, tag, hydrate) {
   }
 }
 
+// == 创建 fiberRoot
 export function createFiberRoot(
   containerInfo: any,
   tag: RootTag,
   hydrate: boolean,
   hydrationCallbacks: null | SuspenseHydrationCallbacks,
 ): FiberRoot {
+  // == 实例 FiberRootNode
   const root: FiberRoot = (new FiberRootNode(containerInfo, tag, hydrate): any);
   if (enableSuspenseCallback) {
     root.hydrationCallbacks = hydrationCallbacks;
@@ -93,11 +100,14 @@ export function createFiberRoot(
 
   // Cyclic construction. This cheats the type system right now because
   // stateNode is any.
+  // == FiberRoot 的 current 属性挂载 未初始化 Fiber 创建 - createHostRootFiber
   const uninitializedFiber = createHostRootFiber(tag);
   root.current = uninitializedFiber;
   uninitializedFiber.stateNode = root;
 
+  // == 初始化更新队列
   initializeUpdateQueue(uninitializedFiber);
 
+  // == 返回 fiberRoot
   return root;
 }

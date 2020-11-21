@@ -238,6 +238,8 @@ function findHostInstanceWithWarning(
   return findHostInstance(component);
 }
 
+// == const root = createContainer(container, tag, hydrate, hydrationCallbacks)
+  // == 返回 fiberRoot
 export function createContainer(
   containerInfo: Container,
   tag: RootTag,

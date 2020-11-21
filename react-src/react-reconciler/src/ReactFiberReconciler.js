@@ -6,7 +6,7 @@
  *
  * @flow
  */
-
+// == enableNewReconciler 默认为 false
 import {enableNewReconciler} from 'shared/ReactFeatureFlags';
 
 // The entry file imports either the old or new version of the reconciler.
@@ -15,6 +15,8 @@ import {enableNewReconciler} from 'shared/ReactFeatureFlags';
 // only here for Flow purposes.
 
 import {
+  // == const root = createContainer(container, tag, hydrate, hydrationCallbacks)
+  // == 返回 fiberRoot
   createContainer as createContainer_old,
   updateContainer as updateContainer_old,
   batchedEventUpdates as batchedEventUpdates_old,

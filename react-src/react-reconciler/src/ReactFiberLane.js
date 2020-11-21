@@ -67,10 +67,12 @@ const IdleLanePriority: LanePriority = 2;
 
 const OffscreenLanePriority: LanePriority = 1;
 
+// == NoLanePriority
 export const NoLanePriority: LanePriority = 0;
 
 const TotalLanes = 31;
 
+// == NoLanes
 export const NoLanes: Lanes = /*                        */ 0b0000000000000000000000000000000;
 export const NoLane: Lane = /*                          */ 0b0000000000000000000000000000000;
 
@@ -102,6 +104,7 @@ const IdleLanes: Lanes = /*                             */ 0b0110000000000000000
 
 export const OffscreenLane: Lane = /*                   */ 0b1000000000000000000000000000000;
 
+// == NoTimestamp
 export const NoTimestamp = -1;
 
 let currentUpdateLanePriority: LanePriority = NoLanePriority;
@@ -639,7 +642,10 @@ export function higherLanePriority(
   return a !== NoLanePriority && a > b ? a : b;
 }
 
+// == 创建 LaneMap
 export function createLaneMap<T>(initial: T): LaneMap<T> {
+  // == TotalLanes 为 31
+  // == 
   return new Array(TotalLanes).fill(initial);
 }
 
