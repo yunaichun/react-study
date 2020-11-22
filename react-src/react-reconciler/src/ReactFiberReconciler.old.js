@@ -337,17 +337,21 @@ export {
   act,
 };
 
+// == 根据容器 container 节点获取 FiberRootNode 实例
 export function getPublicRootInstance(
   container: OpaqueRoot,
 ): React$Component<any, any> | PublicInstance | null {
+  // == FiberRootNode 实例的第一个子节点的 FiberNode 实例
   const containerFiber = container.current;
   if (!containerFiber.child) {
     return null;
   }
+  // == FiberRootNode 实例的第一个子节点的 FiberNode 实例的组件类型
   switch (containerFiber.child.tag) {
     case HostComponent:
       return getPublicInstance(containerFiber.child.stateNode);
     default:
+      // == stateNode 存储的是父节点信息
       return containerFiber.child.stateNode;
   }
 }

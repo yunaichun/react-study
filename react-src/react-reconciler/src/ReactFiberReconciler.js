@@ -29,6 +29,7 @@ import {
   flushSync as flushSync_old,
   flushPassiveEffects as flushPassiveEffects_old,
   IsThisRendererActing as IsThisRendererActing_old,
+  // == 根据容器 container 节点获取 FiberRootNode 实例
   getPublicRootInstance as getPublicRootInstance_old,
   attemptSynchronousHydration as attemptSynchronousHydration_old,
   attemptUserBlockingHydration as attemptUserBlockingHydration_old,

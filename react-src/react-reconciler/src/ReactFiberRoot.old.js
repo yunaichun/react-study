@@ -28,6 +28,7 @@ import {LegacyRoot, BlockingRoot, ConcurrentRoot} from './ReactRootTags';
 
 // == FiberRootNode 构造函数
 function FiberRootNode(containerInfo, tag, hydrate) {
+  // == tag 记录的是 ReactElement 的类型
   this.tag = tag;
   // == root节点，render方法接收的第二个参数
   this.containerInfo = containerInfo;
