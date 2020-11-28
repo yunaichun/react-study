@@ -259,6 +259,7 @@ export function updateContainer(
   if (__DEV__) {
     onScheduleRoot(container, element);
   }
+  // == 获取容器节点挂载的 FiberNode
   const current = container.current;
   const eventTime = requestEventTime();
   if (__DEV__) {

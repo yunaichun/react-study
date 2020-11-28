@@ -124,18 +124,20 @@ function FiberNode(
   mode: TypeOfMode,
 ) {
   // Instance
-  // == tag 记录的是 ReactElement 的类型
+  // ============ 作为静态数据结构的属性
+  // == Fiber对应组件的类型 Function/Class/Host...
   this.tag = tag;
   // == ReactElement里面的key
   this.key = key;
-  // == ReactElement.type，也就是我们调用`createElement`的第一个参数
+  // == 大部分情况同 type ，某些情况不同，比如 FunctionComponent 使用 React.memo 包裹
   this.elementType = null;
-  // == 异步组件resolved之后返回的内容，一般是`function`或者`class`
+  // == 对于FunctionComponent，指函数本身; 对于ClassComponent，指class; 对于HostComponent，指DOM节点tagName
   this.type = null;
   // == FiberRootNode 构造函数
   this.stateNode = null;
 
   // Fiber
+  // ============ 用于连接其他Fiber节点形成Fiber树
   // == 每个 ReactElement 的 return 都会指向父节点
   // == 当没有兄弟节点的时候就会返回父节点
   // == 指向他在Fiber节点树中的`parent`，用来在处理完这个节点之后向上返回
@@ -150,6 +152,7 @@ function FiberNode(
   // == ref属性
   this.ref = null;
 
+  // ============ 作为动态的工作单元的属性: 保存本次更新造成的状态改变相关信息
   // == 新的变动带来的新的props
   this.pendingProps = pendingProps;
   // == 上一次渲染完成之后的props
@@ -169,21 +172,22 @@ function FiberNode(
   this.mode = mode;
 
   // Effects
+  // ============ 保存本次更新会造成的DOM操作
   // == 用来记录下一个 Side Effect
   this.flags = NoFlags;
   this.nextEffect = null;
-
   // == 子树中第一个 side effect
   this.firstEffect = null;
   // == 子树中最后一个 side effect
   this.lastEffect = null;
 
+  // ============ 调度优先级相关
   this.lanes = NoLanes;
   this.childLanes = NoLanes;
 
-  // == 在 Fiber 树更新的过程中，每个 Fiber 都会有一个跟其对应的 Fiber
-  // == 我们称他为 `current <==> workInProgress`
-  // == 在渲染完成之后他们会交换位置
+  // ============ 指向该fiber在另一次更新时对应的fiber
+  // == current Fiber树中的Fiber节点被称为current fiber; workInProgress Fiber树中的Fiber节点被称为workInProgress fiber; 他们通过alternate属性连接。
+  // == 当workInProgress Fiber树构建完成交给Renderer渲染在页面上后，应用根节点的current指针指向workInProgress Fiber树，此时workInProgress Fiber树就变为current Fiber树。
   this.alternate = null;
 
   // == 性能相关属性

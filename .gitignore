@@ -24,3 +24,5 @@ yarn-error.log*
 
 /react-simple-diy/node_modules
 /react-simple-diy/dist
+/react-simple-diy2/node_modules
+/react-simple-diy2/dist

@@ -18,6 +18,7 @@ import {
   // == const root = createContainer(container, tag, hydrate, hydrationCallbacks)
   // == 返回 FiberRootNode 实例
   createContainer as createContainer_old,
+  // == updateContainer(children, fiberRoot, parentComponent, callback);
   updateContainer as updateContainer_old,
   batchedEventUpdates as batchedEventUpdates_old,
   batchedUpdates as batchedUpdates_old,
