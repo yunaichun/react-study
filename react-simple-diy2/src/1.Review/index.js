@@ -1,12 +1,12 @@
 import React, { createElement as createElemenDiy } from 'react';
 import ReactDOM from 'react-dom';
 
-// == 1. jsx 语法需要 createElement1 函数来解析
+// == 1. jsx 语法需要 createElemenDiy 函数 (来自 babel 插件自定义函数名) 来解析
 const element1 = <h1 title="foo">Hello</h1>;
 const container = document.getElementById('root');
 ReactDOM.render(element1, container);
 
-// == 2. React.createElement 会根据传进来的参数创建一个对象
+// == 2. React.createElement 会根据传进来的参数创建一个 js 对象
 const element2 = createElemenDiy(
   'h1',
   { title: 'foo' },
@@ -20,7 +20,7 @@ const output = {
   },
 };
 
-// == 3. 清楚了 React.createElemen 的本质之后，原生 js 模拟实现
+// == 3. 清楚了 React.createElemen 的本质之后。原生 js 模拟实现 ReactDOM.render 函数
 const element3 = {
   type: 'h1',
   props: {
