@@ -12,13 +12,13 @@ function createDom(fiber) {
   return dom;
 }
 
-// == 2. 在渲染函数中, 将 nextUnitOfWork 设置为 Fiber 树的根节点
+// == 2. 在渲染函数中, 将 nextUnitOfWork 设置为 Fiber 树的根节点 [ performUnitOfWork 中返回下一个 Fiber 工作节点]
 let nextUnitOfWork = null;
-// == 备份 Fiber 树的根节点, 称其为进行中的 Fiber 节点: 每次处理一个元素时, 我们都会向页面 DOM 添加一个新节点。而且, 在完成渲染整个树之前, 浏览器可能会中断我们的工作。在这种情况下, 用户将看到不完整的 UI
+// == 备份 Fiber 树的根节点, 称其为进行中的 Fiber 节点: 每次处理一个元素时, 我们都会向页面 DOM 添加一个新节点。而且, 在完成渲染整个树之前, 浏览器可能会中断我们的工作。在这种情况下, 用户将看到不完整的 UI [ workLoop 中判断是否执行 commitRoot 提交到 DOM 阶段]
 let wipRoot = null;
-// == 我们需要将在 render 函数上收到的元素与我们提交给 DOM 的最后一个 Fiber 节点进行比较. 因此, 在完成提交之后，我们需要保存对"提交给 DOM 的最后一个 Fiber 节点"的引用. 我们称它为 currentRoot
+// == 我们需要将在 render 函数上收到的元素与我们提交给 DOM 的最后一个 Fiber 节点进行比较. 因此, 在完成提交之后，我们需要保存对"提交给 DOM 的 Fiber 树的根节点"的引用. 我们称它为 currentRoot [ reconcileChildren 调和阶段存储上一次提交 DOM 时的 Fiber 节点数据]
 let currentRoot = null;
-// == 当我们将 Fiber 树提交给 DOM 时, 我们是从正在进行的根节点开始的, 它没有旧的 Fiber 树. 因此, 我们需要一个数组来跟踪要删除的节点
+// == 当我们将 Fiber 树提交给 DOM 时, 我们是从正在进行的根节点开始的, 它没有旧的 Fiber 树. 因此, 我们需要一个数组来跟踪要删除的节点 [ commitRoot 阶段单独执行 DOM 的删除操作]
 let deletions = null;
 function render(element, container) {
   // == 当前工作单元: 根 Fiber 节点
@@ -36,19 +36,23 @@ function render(element, container) {
     child: null,
     // == 还有一个 sibling 属性, 在 performUnitOfWork 阶段会被添加
     sibling: null,
-    // == 每个 Fiber 节点都有 alternate 属性: 该属性是旧 Fiber 节点的引用, 旧 Fiber 是我们在上一个提交阶段提交给 DOM 的 Fiber 节点
+    // == 每个 Fiber 节点都有 alternate 属性: 该属性是旧 Fiber 节点的引用, 旧 Fiber 是我们在上一个提交阶段提交给 DOM 的 Fiber 节点[引用传递]
     alternate: currentRoot,
   };
+  // == 每次的 render 或者 rerender 都会初始化删除标记为空
   deletions = [];
+  // == 每次的 render 或者 rerender 都会初始化 nextUnitOfWork 为 Fiber 树的根节点
   nextUnitOfWork = wipRoot;
 }
 
 // == 一旦完成所有工作（因为没有下一个工作单元，我们就知道了），我们便将整个 Fiber 树提交给 DOM
 // == 我们在 commitRoot 函数中做到这一点。在这里，我们将所有节点递归附加到 dom
 function commitRoot() {
+  // == 删除 dom 操作单独执行
+  deletions.forEach(commitWork);
   // == wipRoot.child 代表 Fiber 树的第一个子节点
   commitWork(wipRoot.child);
-  // == 保存上一次构建的 Fiber 树数据结构, 在下一次重新渲染时候会用到: 先在 reconcileChildren 阶段将每个 Fiber 节点通过 alternate 属性存储上, 然后在 commitRoot 阶段会用到
+  // == 保存上一次构建的 Fiber 树数据结构, 在下一次重新渲染时候会用到: 先在 reconcileChildren 阶段将每个 Fiber 节点通过 alternate 属性存储上, 然后在 commitRoot 对比后才去真正执行 DOM 操作
   currentRoot = wipRoot;
   console.log(222222, currentRoot);
   // == 添加到 DOM 节点之后将 Fiber 树销毁
@@ -170,7 +174,7 @@ function performUnitOfWork(fiber) {
   // create new fibers
   // return next unit of work
 
-  // == 1. 首先, 我们创建一个新节点并将其附加到DOM. 
+  // == 1. 首先, 我们创建一个新节点
   if (!fiber.dom) {
     fiber.dom = createDom(fiber);
   }
@@ -242,7 +246,7 @@ function reconcileChildren(wipFiber, elements) {
         parent: wipFiber,
         // child: null,
         // sibling: null,
-        // == 更新的时候每个 Fiber 节点都保存上一次 Fiber 节点的数据: 在 commitRoot 阶段会用到
+        // == 更新的时候每个 Fiber 节点都保存上一次 Fiber 节点的数据: 先在 reconcileChildren 阶段将每个 Fiber 节点通过 alternate 属性存储上, 然后在 commitRoot 阶段对比后才去真正执行 DOM 操作
         alternate: oldFiber,
         // == 我们将在提交阶段使用此属性
         effectTag: 'UPDATE',
