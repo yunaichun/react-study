@@ -12,7 +12,7 @@
 
 // == 二. 实现自己的 createElemenDiy 函数
 // == 2.1 通过延展符使得 children 在 props 中为数组
-function createElemenDiy(type, props, ...children) {
+export default function createElemenDiy(type, props, ...children) {
   return {
     type,
     props: {
