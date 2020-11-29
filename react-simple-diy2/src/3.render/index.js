@@ -8,7 +8,9 @@ export default function render(element, container) {
       ? document.createTextNode('')
       : document.createElement(element.type);
 
-  // == 2. 递归创建每个子节点
+  // == 2. 递归创建每个子节点。此递归调用存在以下问题:
+  // == 开始渲染后，直到渲染完完整的元素树后，我们才会停止。如果元素树很大，则可能会阻塞主线程太长时间。
+  // == 而且，如果浏览器需要执行高优先级的操作（例如处理用户输入或保持动画流畅），则它必须等到渲染完成为止。
   element.props.children.forEach(child =>
     render(child, dom)
   );
