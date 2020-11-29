@@ -24,10 +24,19 @@ let wipRoot = null;
 function render(element, container) {
   // == 当前工作单元: 根 Fiber 节点
   wipRoot = {
-    dom: container,
+    // == 根节点没有此属性
+    // type: null,
     props: {
+      // == element 为 createElement 创建的 js 对象
       children: [element],
     },
+    dom: container,
+    // == 根节点没有此属性
+    // parent: null,
+    // == 还有一个 child 属性, 在 performUnitOfWork 阶段会被添加
+    child: null,
+    // == 还有一个 sibling 属性, 在 performUnitOfWork 阶段会被添加
+    sibling: null,
   };
   nextUnitOfWork = wipRoot;
 }
@@ -35,17 +44,19 @@ function render(element, container) {
 // == 一旦完成所有工作（因为没有下一个工作单元，我们就知道了），我们便将整个 Fiber 树提交给 DOM
 // == 我们在 commitRoot 函数中做到这一点。在这里，我们将所有节点递归附加到 dom
 function commitRoot() {
+  // == wipRoot.child 代表 Fiber 树的第一个子节点
   commitWork(wipRoot.child);
+  // == 添加到 DOM 节点之后将 Fiber 树销毁
   wipRoot = null;
 }
 function commitWork(fiber) {
   if (!fiber) {
     return;
   }
-  // == 1. 将第一个子节点添加到 container
+  // == 1. 将子节点添加到 container
   const domParent = fiber.parent.dom;
   domParent.appendChild(fiber.dom);
-  // == 2. 递归执行第一个子节点
+  // == 2. 递归执行子节点
   commitWork(fiber.child);
   // == 3. 递归执行右兄弟节点
   commitWork(fiber.sibling);
@@ -99,8 +110,13 @@ function performUnitOfWork(fiber) {
     const newFiber = {
       type: element.type,
       props: element.props,
-      parent: fiber,
+      // == 在下一个工作单元被创建
       dom: null,
+      parent: fiber,
+      // == 在下一个工作单元被添加
+      child: null,
+      // == 在下一个工作单元被添加
+      sibling: null,
     };
 
     // == 将其添加到 Fiber 树中, 将其设置为子节点还是同级节点, 具体取决于它是否是第一个子节点
@@ -128,7 +144,7 @@ function performUnitOfWork(fiber) {
 }
 
 
-// == 调用我们自己创建的 createElemen 和 render 方法
+// == 调用我们自己创建的 createElement 和 render 方法
 const element = (
   <div id="foo">
     <a>bar</a>
