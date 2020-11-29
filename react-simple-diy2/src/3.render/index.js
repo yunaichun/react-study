@@ -35,5 +35,5 @@ const element = (
     <b />
   </div>
 );
-const container = document.getElementById("root");
+const container = document.getElementById('root');
 render(element, container);

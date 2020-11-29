@@ -18,7 +18,7 @@ export default function createElemenDiy(type, props, ...children) {
     props: {
       ...props,
       children: children.map(child =>
-        typeof child === "object"
+        typeof child === 'object'
           ? child
           : createTextElement(child)
       ),
@@ -28,7 +28,7 @@ export default function createElemenDiy(type, props, ...children) {
 // == 2.2 子元素可能是 TEXT_ELEMENT
 function createTextElement(text) {
   return {
-    type: "TEXT_ELEMENT",
+    type: 'TEXT_ELEMENT',
     props: {
       nodeValue: text,
       children: [],
@@ -50,7 +50,7 @@ const element = (
   </div>
 );
 // == 最后 element 返回一个 js 对象如下所示
-console.log(element);
+console.log(1111, element);
 // {
 //   "type": "div",
 //   "props": {

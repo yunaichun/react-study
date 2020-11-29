@@ -87,14 +87,13 @@ module.exports = {
         ),
     ].concat(htmlWebpackPlugins),
     devtool: process.env.NODE_ENV === 'development' ?
-        'source-map' : false,
+        '#eval-source-map' : false,
     devServer: process.env.NODE_ENV === 'development' ? {
         port: 8374,
         open: true,
         hot: true,
-        contentBase: path.resolve('dist'),
-        publicPath: './',
-        // openPage: `JSX.html`,
-        // index: `JSX.html`,
+        contentBase: path.resolve('src'),
+        openPage: `1.Review.html`,
+        index: `1.Review.html`,
     } : {},
 };

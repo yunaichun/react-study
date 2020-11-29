@@ -50,7 +50,7 @@ module.exports = {
     output: {
         path: path.resolve('dist'),
         filename: '[name].js',
-        publicPath: '/',
+        publicPath: './',
     },
     mode: process.env.NODE_ENV,
     optimization: {
@@ -87,7 +87,7 @@ module.exports = {
         ),
     ].concat(htmlWebpackPlugins),
     devtool: process.env.NODE_ENV === 'development' ?
-        'source-map' : false,
+        '#eval-source-map' : false,
     devServer: process.env.NODE_ENV === 'development' ? {
         port: 8374,
         open: true,
