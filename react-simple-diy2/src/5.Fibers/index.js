@@ -44,7 +44,7 @@ function createDom(fiber) {
 
 // == 2. 在渲染函数中, 将 nextUnitOfWork 设置为 Fiber 树的根节点
 let nextUnitOfWork = null;
-function render(element, container) {
+export default function render(element, container) {
   // == 当前工作单元: 根 Fiber 节点
   nextUnitOfWork = {
     dom: container,

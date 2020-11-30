@@ -20,7 +20,7 @@ let wipRoot = null;
 let currentRoot = null;
 // == 当我们将 Fiber 树提交给 DOM 时, 我们是从正在进行的根节点开始的, 它没有旧的 Fiber 树. 因此, 我们需要一个数组来跟踪要删除的节点 [ commitRoot 阶段单独执行 DOM 的删除操作]
 let deletions = null;
-function render(element, container) {
+export default function render(element, container) {
   // == 当前工作单元: 根 Fiber 节点
   wipRoot = {
     // == 根节点没有此属性

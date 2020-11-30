@@ -21,7 +21,7 @@ function createDom(fiber) {
 let nextUnitOfWork = null;
 // == 备份 Fiber 树的根节点, 称其为进行中的 Fiber 节点: 每次处理一个元素时, 我们都会向页面 DOM 添加一个新节点。而且, 在完成渲染整个树之前, 浏览器可能会中断我们的工作。在这种情况下, 用户将看到不完整的 UI
 let wipRoot = null;
-function render(element, container) {
+export default function render(element, container) {
   // == 当前工作单元: 根 Fiber 节点
   wipRoot = {
     // == 根节点没有此属性
