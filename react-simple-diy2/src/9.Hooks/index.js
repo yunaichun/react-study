@@ -222,12 +222,59 @@ function performUnitOfWork(fiber) {
     nextFiber = nextFiber.parent;
   }
 }
+// == 设置进行构建中的 Fiber
+let wipFiber = null;
+// == Fiber 树中添加 hooks 数组: 支持在同一组件中多次调用 useState , 并且我们跟踪当前 hook 索引
+let hookIndex = null;
 function updateFunctionComponent(fiber) {
+  wipFiber = fiber;
+  // == 函数组件有一个 hooks 属性存储 useState 钩子函数数组
+  wipFiber.hooks = [];
+  // == 函数组件跟踪 hooks 数组索引
+  hookIndex = 0;
   // == 执行此函数组件: fiber.type() -> createElement() -> js 对象【和 fiber.props.children 一致】
   // == 区别是函数组件没有 dom 等属性, 同时经过 createElement 解析之后 type 为 Function【实际是此函数组件本身】
   const children = [fiber.type(fiber.props)];
   reconcileChildren(fiber, children);
 }
+export default function useState(initial) {
+  const oldHook =
+    wipFiber.alternate &&
+    wipFiber.alternate.hooks &&
+    wipFiber.alternate.hooks[hookIndex];
+  const hook = {
+    // == 当函数组件调用 useState 时，我们检查是否有旧的 hook, 有则取旧 hook 的 state, 否则取初始化 state
+    state: oldHook ? oldHook.state : initial,
+    // == 改变 hook 状态的 action 队列
+    queue: [],
+  };
+
+  // == 在下一次工作单元的时候会执行所有的 actions : 传入旧的 state, 返回新的 state
+  const actions = oldHook ? oldHook.queue : [];
+  actions.forEach(action => {
+    hook.state = action(hook.state);
+  });
+
+  // == 1. hook 存入当前 action
+  // == 2. 将新的进行中的 currentRoot 设置为下一个工作单元, 以便工作循环可以开始新的渲染阶段.
+  // == 3. 在下一次工作单元的时候会执行所有的 actions
+  const setState = action => {
+    hook.queue.push(action);
+    wipRoot = {
+      dom: currentRoot.dom,
+      props: currentRoot.props,
+      alternate: currentRoot,
+    };
+    deletions = [];
+    nextUnitOfWork = wipRoot;
+  }
+
+  wipFiber.hooks.push(hook);
+  hookIndex++;
+  // == 返回 hook 状态、改变 hook 状态的方法
+  return [hook.state, setState];
+}
+
 function updateHostComponent(fiber) {
   if (!fiber.dom) {
     fiber.dom = createDom(fiber);
@@ -312,22 +359,15 @@ function reconcileChildren(wipFiber, elements) {
 }
 
 
-// === 函数组件 === 
-function App(props) {
-  return <h1>Hi {props.name}</h1>;
+// === hooks 函数组件 === 
+function Counter() {
+  const [state, setState] = useState(1);
+  return (
+    <h1 onClick={() => setState(c => c + 1)} style="user-select: none">
+      Count: {state}
+    </h1>
+  );
 }
-const element = <App name="foo" />;
-// === 以上等价 ===
-// function App(props) {
-//   return createElement(
-//     "h1",
-//     null,
-//     "Hi ",
-//     props.name
-//   )
-// };
-// const element = createElement(App, {
-//   name: "foo",
-// });
+const element = <Counter />;
 const container = document.getElementById('root');
 render(element, container);
