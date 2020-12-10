@@ -129,9 +129,13 @@ export type UpdateQueue<State> = {|
   effects: Array<Update<State>> | null,
 |};
 
+// == 更新状态为 0
 export const UpdateState = 0;
+// == 替换状态为 1
 export const ReplaceState = 1;
+// == 强制更新状态为 2
 export const ForceUpdate = 2;
+// == 捕获更新状态为 2
 export const CaptureUpdate = 3;
 
 // Global state that is reset at the beginning of calling `processUpdateQueue`.
@@ -184,36 +188,65 @@ export function cloneUpdateQueue<State>(
   }
 }
 
+// == 根据 eventTime, lane 创建更新对象
 export function createUpdate(eventTime: number, lane: Lane): Update<*> {
   const update: Update<*> = {
     eventTime,
     lane,
 
+    // == 更新状态为 0
     tag: UpdateState,
+    // == React DevTools 使用
     payload: null,
+    // == 回调函数
     callback: null,
 
+    // == 挂载 fiber.updateQueue.shared.pending.next
     next: null,
   };
+  // == 返回更新对象
   return update;
 }
 
+// == 执行更新队列【current: 传入容器节点挂载的 FiberNode; update: 根据 eventTime, lane 创建更新对象】
+// == update.next = fiber.updateQueue.shared.pending.next
+// == fiber.updateQueue.shared.pending.next = update
 export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
+  // == initializeUpdateQueue(uninitializedFiber) 中初始化的
+  // == 该 FiberNode 对应的组件产生的 Update 会存放在这个队列里面
+  // == setState 算出新的 state 就是存放在 updateQueue 中
+  // == const queue = {
+  // ==   baseState: fiber.memoizedState,
+  // ==   firstBaseUpdate: null,
+  // ==   lastBaseUpdate: null,
+  // ==   shared: {
+  // ==     pending: null,
+  // ==   },
+  // ==   effects: null,
+  // == };
+  // fiber.updateQueue = queue;
   const updateQueue = fiber.updateQueue;
+  // == 还没挂载的时候不执行后续逻辑
   if (updateQueue === null) {
     // Only occurs if the fiber has been unmounted.
     return;
   }
 
+  // == fiber.updateQueue.shared.pending
   const sharedQueue: SharedQueue<State> = (updateQueue: any).shared;
   const pending = sharedQueue.pending;
   if (pending === null) {
     // This is the first update. Create a circular list.
+    // == 初始更新 pending 为 null
     update.next = update;
   } else {
+    // == 非初始更新
+    // == update.next = fiber.updateQueue.shared.pending.next
     update.next = pending.next;
+    // == fiber.updateQueue.shared.pending.next = update
     pending.next = update;
   }
+  // == fiber.updateQueue.shared.pending = update
   sharedQueue.pending = update;
 
   if (__DEV__) {
