@@ -62,6 +62,8 @@ const fakeCallbackNode = {};
 // Except for NoPriority, these correspond to Scheduler priorities. We use
 // ascending numbers so we can compare them like numbers. They start at 90 to
 // avoid clashing with Scheduler's priorities.
+// == 除 NoPriority 外，这些都与 Scheduler 优先级相对应。
+// == 我们用上升数字，因此我们可以像数字一样比较它们。他们从 90 开始避免与 Scheduler 的优先级冲突。
 export const ImmediatePriority: ReactPriorityLevel = 99;
 export const UserBlockingPriority: ReactPriorityLevel = 98;
 export const NormalPriority: ReactPriorityLevel = 97;
@@ -90,17 +92,30 @@ const initialTimeMs: number = Scheduler_now();
 export const now =
   initialTimeMs < 10000 ? Scheduler_now : () => Scheduler_now() - initialTimeMs;
 
+// == 根据 schedulerPriority 获取 LanePriority
+// == schedulerPriority 优先级比较小，对应 LanePriority 比较大，如下所示: 
+// ImmediatePriority = 1;    -> 99
+// UserBlockingPriority = 2; -> 98
+// NormalPriority = 3;       -> 97
+// LowPriority = 4;          -> 96
+// IdlePriority = 5;         -> 95
+// NoPriority = 0;           -> 90
 export function getCurrentPriorityLevel(): ReactPriorityLevel {
   switch (Scheduler_getCurrentPriorityLevel()) {
     case Scheduler_ImmediatePriority:
+      // == 99
       return ImmediatePriority;
     case Scheduler_UserBlockingPriority:
+      // == 98
       return UserBlockingPriority;
     case Scheduler_NormalPriority:
+      // == 97
       return NormalPriority;
     case Scheduler_LowPriority:
+      // == 96
       return LowPriority;
     case Scheduler_IdlePriority:
+      // == 95
       return IdlePriority;
     default:
       invariant(false, 'Unknown priority level.');

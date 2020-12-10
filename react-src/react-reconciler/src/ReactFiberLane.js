@@ -43,31 +43,38 @@ import {
   NoPriority as NoSchedulerPriority,
 } from './SchedulerWithReactIntegration.new';
 
+// == 同步 Lane 优先级 - 15
 export const SyncLanePriority: LanePriority = 15;
+// == 批量更新 Lane 优先级 - 14
 export const SyncBatchedLanePriority: LanePriority = 14;
 
 const InputDiscreteHydrationLanePriority: LanePriority = 13;
+// == 输入 Lane 优先级 - 12
 export const InputDiscreteLanePriority: LanePriority = 12;
 
 const InputContinuousHydrationLanePriority: LanePriority = 11;
+// == 持续输入 Lane 优先级 - 10
 export const InputContinuousLanePriority: LanePriority = 10;
 
 const DefaultHydrationLanePriority: LanePriority = 9;
+// == 默认 Lane 优先级 - 8
 export const DefaultLanePriority: LanePriority = 8;
 
 const TransitionHydrationPriority: LanePriority = 7;
+// == 动画 Lane 优先级 - 6
 export const TransitionPriority: LanePriority = 6;
-
+// == 重试 Lane 优先级 - 5
 const RetryLanePriority: LanePriority = 5;
 
 const SelectiveHydrationLanePriority: LanePriority = 4;
 
 const IdleHydrationLanePriority: LanePriority = 3;
+// == 浏览器空闲 Lane 优先级 - 2
 const IdleLanePriority: LanePriority = 2;
 
 const OffscreenLanePriority: LanePriority = 1;
 
-// == NoLanePriority
+// == NoLanePriority - 0
 export const NoLanePriority: LanePriority = 0;
 
 const TotalLanes = 31;
@@ -76,9 +83,12 @@ const TotalLanes = 31;
 export const NoLanes: Lanes = /*                        */ 0b0000000000000000000000000000000;
 export const NoLane: Lane = /*                          */ 0b0000000000000000000000000000000;
 
+// == 同步 Lane - 1
 export const SyncLane: Lane = /*                        */ 0b0000000000000000000000000000001;
+// == 批量更新 Lane - 2
 export const SyncBatchedLane: Lane = /*                 */ 0b0000000000000000000000000000010;
 
+// == 输入 Lane - 4
 export const InputDiscreteHydrationLane: Lane = /*      */ 0b0000000000000000000000000000100;
 const InputDiscreteLanes: Lanes = /*                    */ 0b0000000000000000000000000011000;
 
@@ -89,6 +99,7 @@ export const DefaultHydrationLane: Lane = /*            */ 0b0000000000000000000
 export const DefaultLanes: Lanes = /*                   */ 0b0000000000000000000111000000000;
 
 const TransitionHydrationLane: Lane = /*                */ 0b0000000000000000001000000000000;
+// == 动画 Lane - 4186112
 const TransitionLanes: Lanes = /*                       */ 0b0000000001111111110000000000000;
 
 const RetryLanes: Lanes = /*                            */ 0b0000011110000000000000000000000;
@@ -109,6 +120,7 @@ export const NoTimestamp = -1;
 
 let currentUpdateLanePriority: LanePriority = NoLanePriority;
 
+// == 获取 currentUpdateLanePriority
 export function getCurrentUpdateLanePriority(): LanePriority {
   return currentUpdateLanePriority;
 }
@@ -196,6 +208,14 @@ function getHighestPriorityLanes(lanes: Lanes | Lane): Lanes {
   return lanes;
 }
 
+// == 根据 schedulerPriority 获取 LanePriority
+// == schedulerPriority 优先级比较小，对应 LanePriority 比较大，如下所示: 
+// ImmediatePriority = 1;    -> 99
+// UserBlockingPriority = 2; -> 98
+// NormalPriority = 3;       -> 97
+// LowPriority = 4;          -> 96
+// IdlePriority = 5;         -> 95
+// NoPriority = 0;           -> 90
 export function schedulerPriorityToLanePriority(
   schedulerPriorityLevel: ReactPriorityLevel,
 ): LanePriority {
@@ -484,51 +504,67 @@ export function includesOnlyTransitions(lanes: Lanes) {
 
 // To ensure consistency across multiple updates in the same event, this should
 // be a pure function, so that it always returns the same lane for given inputs.
+// == 返回 UpdateLane
+// 为了确保同一事件中多个更新的一致性，这应该是一个纯函数，因此对于给定的输入，它总是返回相同的通道。
 export function findUpdateLane(
   lanePriority: LanePriority,
   wipLanes: Lanes,
 ): Lane {
   switch (lanePriority) {
+    // == NoLanePriority - 0
     case NoLanePriority:
       break;
+    // == 同步 Lane 优先级 - 15
     case SyncLanePriority:
       return SyncLane;
+    // == 批量更新 Lane 优先级 - 14
     case SyncBatchedLanePriority:
       return SyncBatchedLane;
+    // == 输入 Lane 优先级 - 12
     case InputDiscreteLanePriority: {
       const lane = pickArbitraryLane(InputDiscreteLanes & ~wipLanes);
       if (lane === NoLane) {
         // Shift to the next priority level
+        // == 转移到下一个优先级
         return findUpdateLane(InputContinuousLanePriority, wipLanes);
       }
       return lane;
     }
+    // == 持续输入 Lane 优先级 - 10
     case InputContinuousLanePriority: {
       const lane = pickArbitraryLane(InputContinuousLanes & ~wipLanes);
       if (lane === NoLane) {
         // Shift to the next priority level
+        // == 转移到下一个优先级
         return findUpdateLane(DefaultLanePriority, wipLanes);
       }
       return lane;
     }
+    // == 默认 Lane 优先级 - 8
     case DefaultLanePriority: {
       let lane = pickArbitraryLane(DefaultLanes & ~wipLanes);
       if (lane === NoLane) {
         // If all the default lanes are already being worked on, look for a
         // lane in the transition range.
+        // == 如果所有默认 lane 都已在使用中，在 TransitionLanes 中寻找 lane
         lane = pickArbitraryLane(TransitionLanes & ~wipLanes);
         if (lane === NoLane) {
           // All the transition lanes are taken, too. This should be very
           // rare, but as a last resort, pick a default lane. This will have
           // the effect of interrupting the current work-in-progress render.
+          // == 所有的 TransitionLanes 也被占用。这应该是非常罕见，
+          // == 但作为最后的选择，选择 DefaultLanes, 这对中断当前 work-in-progress 有影响。
           lane = pickArbitraryLane(DefaultLanes);
         }
       }
       return lane;
     }
+    // == 动画 Lane 优先级 - 6
     case TransitionPriority: // Should be handled by findTransitionLane instead
+    // == 重试 Lane 优先级 - 5
     case RetryLanePriority: // Should be handled by findRetryLane instead
       break;
+    // == 浏览器空闲 Lane 优先级 - 2
     case IdleLanePriority:
       let lane = pickArbitraryLane(IdleLanes & ~wipLanes);
       if (lane === NoLane) {
@@ -548,17 +584,22 @@ export function findUpdateLane(
 
 // To ensure consistency across multiple updates in the same event, this should
 // be pure function, so that it always returns the same lane for given inputs.
+// == 返回 TransitionLane
+// == 为了确保同一事件中多个更新的一致性，这应该是纯函数，因此对于给定的输入，它总是返回相同的 lane
 export function findTransitionLane(wipLanes: Lanes, pendingLanes: Lanes): Lane {
   // First look for lanes that are completely unclaimed, i.e. have no
   // pending work.
+  // == 首先寻找完全无人认领的 lane ，即没有 pending 的任务
   let lane = pickArbitraryLane(TransitionLanes & ~pendingLanes);
   if (lane === NoLane) {
     // If all lanes have pending work, look for a lane that isn't currently
     // being worked on.
+    // 如果所有 lane 都有 pending 的任务，查找当前不工作的 lane
     lane = pickArbitraryLane(TransitionLanes & ~wipLanes);
     if (lane === NoLane) {
       // If everything is being worked on, pick any lane. This has the
       // effect of interrupting the current work-in-progress.
+      // == 如果所有 lane 都在进行，请选择任意 lane。这对中断当前 work-in-progress 有影响
       lane = pickArbitraryLane(TransitionLanes);
     }
   }
@@ -578,7 +619,10 @@ export function findRetryLane(wipLanes: Lanes): Lane {
   return lane;
 }
 
+// == 获取最高优先级
 function getHighestPriorityLane(lanes: Lanes) {
+  // == 负数: 正数的反码 + 1
+  // == lanes & -lanes  => 取最后一位 1
   return lanes & -lanes;
 }
 
@@ -592,11 +636,14 @@ function getEqualOrHigherPriorityLanes(lanes: Lanes | Lane): Lanes {
   return (getLowestPriorityLane(lanes) << 1) - 1;
 }
 
+// == 获取最高优先级
 export function pickArbitraryLane(lanes: Lanes): Lane {
   // This wrapper function gets inlined. Only exists so to communicate that it
   // doesn't matter which bit is selected; you can pick any bit without
   // affecting the algorithms where its used. Here I'm using
   // getHighestPriorityLane because it requires the fewest operations.
+  // == 该包装函数被内联。仅存在以进行交流选择哪个位都没有关系；你可以选择任何没有影响使用算法。
+  // == 我在这里用 getHighestPriorityLane，因为它需要最少的操作。
   return getHighestPriorityLane(lanes);
 }
 

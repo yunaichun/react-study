@@ -13,6 +13,7 @@ const {ReactCurrentBatchConfig} = ReactSharedInternals;
 
 export const NoTransition = 0;
 
+// == 获取当前 Transition
 export function requestCurrentTransition(): number {
   return ReactCurrentBatchConfig.transition;
 }

@@ -250,6 +250,7 @@ export function createContainer(
   return createFiberRoot(containerInfo, tag, hydrate, hydrationCallbacks);
 }
 
+// == 更新容器
 export function updateContainer(
   element: ReactNodeList,
   container: OpaqueRoot,
@@ -261,6 +262,7 @@ export function updateContainer(
   }
   // == 获取容器节点挂载的 FiberNode
   const current = container.current;
+  // == 获取 eventTime
   const eventTime = requestEventTime();
   if (__DEV__) {
     // $FlowExpectedError - jest isn't a global, and isn't recognized outside of tests
@@ -269,6 +271,7 @@ export function updateContainer(
       warnIfNotScopedWithMatchingAct(current);
     }
   }
+  // == 获取 lane
   const lane = requestUpdateLane(current);
 
   if (enableSchedulingProfiler) {

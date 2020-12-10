@@ -62,6 +62,8 @@ const fakeCallbackNode = {};
 // Except for NoPriority, these correspond to Scheduler priorities. We use
 // ascending numbers so we can compare them like numbers. They start at 90 to
 // avoid clashing with Scheduler's priorities.
+// == 除 NoPriority 外，这些都与 Scheduler 优先级相对应。
+// == 我们用上升数字，因此我们可以像数字一样比较它们。他们从 90 开始避免与 Scheduler 的优先级冲突。
 export const ImmediatePriority: ReactPriorityLevel = 99;
 export const UserBlockingPriority: ReactPriorityLevel = 98;
 export const NormalPriority: ReactPriorityLevel = 97;
@@ -87,9 +89,19 @@ const initialTimeMs: number = Scheduler_now();
 // the behavior of performance.now and keep our times small enough to fit
 // within 32 bits.
 // TODO: Consider lifting this into Scheduler.
+// == 1. 如果初始时间戳相当小，直接使用 Scheduler 的 now ，对于支持 performance.now 的现代浏览器，情况就是如此。
+// == 2. 较旧的浏览器，Scheduler 退回到 Date.now，它返回一个 Unix 时间戳记。在这种情况下，减去模块初始化时间即可进行仿真 performance.now 的行为并保持我们的时间足够小以适应在32位内
 export const now =
   initialTimeMs < 10000 ? Scheduler_now : () => Scheduler_now() - initialTimeMs;
 
+// == 根据 schedulerPriority 获取 LanePriority
+// == schedulerPriority 优先级比较小，对应 LanePriority 比较大，如下所示: 
+// ImmediatePriority = 1;    -> 99
+// UserBlockingPriority = 2; -> 98
+// NormalPriority = 3;       -> 97
+// LowPriority = 4;          -> 96
+// IdlePriority = 5;         -> 95
+// NoPriority = 0;           -> 90
 export function getCurrentPriorityLevel(): ReactPriorityLevel {
   switch (Scheduler_getCurrentPriorityLevel()) {
     case Scheduler_ImmediatePriority:

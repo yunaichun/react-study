@@ -9,6 +9,7 @@
 
 import type {Thenable, Wakeable} from 'shared/ReactTypes';
 import type {Fiber, FiberRoot} from './ReactInternalTypes';
+// == Lane 模型
 import type {Lanes, Lane} from './ReactFiberLane';
 import type {ReactPriorityLevel} from './ReactInternalTypes';
 import type {Interaction} from 'scheduler/src/Tracing';
@@ -24,7 +25,9 @@ import {
   enableProfilerCommitHooks,
   enableSchedulerTracing,
   warnAboutUnmockedScheduler,
+  // == true
   deferRenderPhaseUpdateToNextBatch,
+  // == false
   decoupleUpdatePriorityFromScheduler,
   enableDebugTracing,
   enableSchedulingProfiler,
@@ -38,10 +41,13 @@ import invariant from 'shared/invariant';
 import {
   scheduleCallback,
   cancelCallback,
+  // == schedulerPriority 优先级比较小，对应 LanePriority 比较大
   getCurrentPriorityLevel,
   runWithPriority,
   shouldYield,
   requestPaint,
+  // == 1. 如果初始时间戳相当小，直接使用 Scheduler 的 now ，对于支持 performance.now 的现代浏览器，情况就是如此。
+  // == 2. 较旧的浏览器，Scheduler 退回到 Date.now，它返回一个 Unix 时间戳记。在这种情况下，减去模块初始化时间即可进行仿真 performance.now 的行为并保持我们的时间足够小以适应在32位内
   now,
   NoPriority as NoSchedulerPriority,
   ImmediatePriority as ImmediateSchedulerPriority,
@@ -94,11 +100,16 @@ import {
   assignFiberPropertiesInDEV,
 } from './ReactFiber.old';
 import {
+  // == NoMode - 0 
   NoMode,
+  // == StrictMode - 1
   StrictMode,
-  ProfileMode,
+  // == BlockingMode - 2
   BlockingMode,
+  // == ConcurrentMode - 4
   ConcurrentMode,
+  // == ProfileMode - 8
+  ProfileMode,
 } from './ReactTypeOfMode';
 import {
   HostRoot,
@@ -135,16 +146,24 @@ import {
   HydratingAndUpdate,
 } from './ReactFiberFlags';
 import {
+  // == 优先级为 0
   NoLanePriority,
+  // == 优先级为 15
   SyncLanePriority,
+  // == 优先级为 14
   SyncBatchedLanePriority,
+  // == 优先级为 12
   InputDiscreteLanePriority,
+  // == 优先级为 8
   DefaultLanePriority,
+  // == 优先级为 0
   NoLanes,
   NoLane,
+  // == 优先级为 1
   SyncLane,
   SyncBatchedLane,
   OffscreenLane,
+  // == 值为 -1
   NoTimestamp,
   findUpdateLane,
   findTransitionLane,
@@ -248,14 +267,15 @@ const {
 
 type ExecutionContext = number;
 
-export const NoContext = /*             */ 0b0000000;
-const BatchedContext = /*               */ 0b0000001;
-const EventContext = /*                 */ 0b0000010;
-const DiscreteEventContext = /*         */ 0b0000100;
-const LegacyUnbatchedContext = /*       */ 0b0001000;
-const RenderContext = /*                */ 0b0010000;
-const CommitContext = /*                */ 0b0100000;
-export const RetryAfterError = /*       */ 0b1000000;
+// == 定义不同优先级 Context
+export const NoContext = /*             */ 0b0000000;//0
+const BatchedContext = /*               */ 0b0000001;//1
+const EventContext = /*                 */ 0b0000010;//2
+const DiscreteEventContext = /*         */ 0b0000100;//4
+const LegacyUnbatchedContext = /*       */ 0b0001000;//8
+const RenderContext = /*                */ 0b0010000;//16
+const CommitContext = /*                */ 0b0100000;//32
+export const RetryAfterError = /*       */ 0b1000000;//64
 
 type RootExitStatus = 0 | 1 | 2 | 3 | 4 | 5;
 const RootIncomplete = 0;
@@ -266,6 +286,7 @@ const RootSuspendedWithDelay = 4;
 const RootCompleted = 5;
 
 // Describes where we are in the React execution stack
+// == 值为 0b0000000
 let executionContext: ExecutionContext = NoContext;
 // The root we're working on
 let workInProgressRoot: FiberRoot | null = null;
@@ -314,6 +335,7 @@ const FALLBACK_THROTTLE_MS: number = 500;
 let workInProgressRootRenderTargetTime: number = Infinity;
 // How long a render is supposed to take before we start following CPU
 // suspense heuristics and opt out of rendering more content.
+// == 开始跟随 CPU 之前渲染应该花费多长时间暂停试探法，并选择退出呈现更多内容。
 const RENDER_TIMEOUT_MS = 500;
 
 function resetRenderTimer() {
@@ -357,8 +379,11 @@ let spawnedWorkDuringRender: null | Array<Lane | Lanes> = null;
 // If two updates are scheduled within the same event, we should treat their
 // event times as simultaneous, even if the actual clock time has advanced
 // between the first and second call.
+// == 初始更新时: currentEventTime 与 NoTimestamp 值同为 -1
 let currentEventTime: number = NoTimestamp;
+// == 当前事件 Lanes 备份
 let currentEventWipLanes: Lanes = NoLanes;
+// == 当前事件 pending 的 Lanes
 let currentEventPendingLanes: Lanes = NoLanes;
 
 // Dev only flag that tracks if passive effects are currently being flushed.
@@ -372,17 +397,24 @@ export function getWorkInProgressRoot(): FiberRoot | null {
   return workInProgressRoot;
 }
 
+// == 获取 eventTime
 export function requestEventTime() {
+  // == 1. 如果初始时间戳相当小，直接使用 Scheduler 的 now ，对于支持 performance.now 的现代浏览器，情况就是如此。
+  // == 2. 较旧的浏览器，Scheduler 退回到 Date.now，它返回一个 Unix 时间戳记。在这种情况下，减去模块初始化时间即可进行仿真 performance.now 的行为并保持我们的时间足够小以适应在32位内
   if ((executionContext & (RenderContext | CommitContext)) !== NoContext) {
     // We're inside React, so it's fine to read the actual time.
+    // == 我们在 React 内部，因此可以读取实际时间
     return now();
   }
   // We're not inside React, so we may be in the middle of a browser event.
+  // == 我们不在 React 内部，因此我们可能处于浏览器事件的中间
   if (currentEventTime !== NoTimestamp) {
     // Use the same start time for all updates until we enter React again.
+    // == 对所有更新使用相同的开始时间，直到我们再次进入 React
     return currentEventTime;
   }
   // This is the first update since React yielded. Compute a new start time.
+  // == 这是自 React 产生以来的第一次更新。计算新的开始时间。
   currentEventTime = now();
   return currentEventTime;
 }
@@ -391,17 +423,26 @@ export function getCurrentTime() {
   return now();
 }
 
+// == 获取 lane
 export function requestUpdateLane(fiber: Fiber): Lane {
   // Special cases
+  // == mode 是 Fiber 节点上的属性
   const mode = fiber.mode;
   if ((mode & BlockingMode) === NoMode) {
+    // == BlockingMode - 0b00010 、 NoMode - 0b00000   =>  mode - 0b00001(1)
+    // == SyncLane - 0b0000000000000000000000000000001
     return (SyncLane: Lane);
   } else if ((mode & ConcurrentMode) === NoMode) {
+    // == BlockingMode - 0b00100 、 NoMode - 0b00000   =>  mode - 0b00011(3)
+    // == 从 Scheduler 获取当前优先级等级: 如果是最高更新优先级的话
     return getCurrentPriorityLevel() === ImmediateSchedulerPriority
+      // == SyncLane - 0b0000000000000000000000000000001
       ? (SyncLane: Lane)
+      // == SyncLane - 0b0000000000000000000000000000010
       : (SyncBatchedLane: Lane);
   } else if (
     !deferRenderPhaseUpdateToNextBatch &&
+    // == executionContext - 0b0000000 、 RenderContext - 0b0010000 、 NoContext - 0b0000000
     (executionContext & RenderContext) !== NoContext &&
     workInProgressRootRenderLanes !== NoLanes
   ) {
@@ -414,6 +455,11 @@ export function requestUpdateLane(fiber: Fiber): Lane {
     // This behavior is only a fallback. The flag only exists until we can roll
     // out the setState warning, since existing code might accidentally rely on
     // the current behavior.
+    // == 这是渲染阶段更新, 这些没有得到官方支持。
+    // == 无论当前渲染什么, 旧的行为是给它相同的“线程”（到期时间）。因此，如果您在组件上调用`setState`, 稍后在同一渲染中发生，它将刷新。
+    // == 理想情况下，我们要删除特殊情况，将其视为来自交错事件。
+    // == 无论如何，此模式不受官方支持。此行为只是一个备用。该标志仅存在，直到我们可以滚动退出 setState 警告，因为现有代码可能会意外地依赖当前行为。
+    // ====== 获取最高优先级: workInProgressRootRenderLanes 最低一位 1
     return pickArbitraryLane(workInProgressRootRenderLanes);
   }
 
@@ -431,10 +477,18 @@ export function requestUpdateLane(fiber: Fiber): Lane {
   // Our heuristic for that is whenever we enter a concurrent work loop.
   //
   // We'll do the same for `currentEventPendingLanes` below.
+  // == 在同一事件中相同优先级的所有的更新，为 lane 分配更新算法应该稳定。
+  // == 因此，算法的输入必须相同。例如，我们使用 `renderLanes` 避免选择已在渲染中间的 lane。
+  // == 但是，相同事件中两次更新 "included" lanes 可能会产生合成变异。
+  // == 例如，如果您在 `flushSync` 中执行更新。或其他可能会调用 "prepareFreshStack" 的代码路径。
+  // == 我们使用的技巧是将每个输入中的第一个缓存在一个事件。
+  // == 一旦我们确定事件结束，然后重置缓存的值。我们的启发式方法是每当我们进入并发工作循环时。
+  // == 我们将在下面的 "currentEventPendingLanes" 中执行相同的操作。
   if (currentEventWipLanes === NoLanes) {
     currentEventWipLanes = workInProgressRootIncludedLanes;
   }
 
+  // == 获取当前 Transition
   const isTransition = requestCurrentTransition() !== NoTransition;
   if (isTransition) {
     if (currentEventPendingLanes !== NoLanes) {
@@ -443,11 +497,14 @@ export function requestUpdateLane(fiber: Fiber): Lane {
           ? mostRecentlyUpdatedRoot.pendingLanes
           : NoLanes;
     }
+    // == 返回 TransitionLane
     return findTransitionLane(currentEventWipLanes, currentEventPendingLanes);
   }
 
   // TODO: Remove this dependency on the Scheduler priority.
   // To do that, we're replacing it with an update lane priority.
+  // == 根据 schedulerPriority 获取 LanePriority
+  // == schedulerPriority 优先级比较小，对应 LanePriority 比较大
   const schedulerPriority = getCurrentPriorityLevel();
 
   // The old behavior was using the priority level of the Scheduler.
@@ -456,14 +513,18 @@ export function requestUpdateLane(fiber: Fiber): Lane {
   // could be problematic, if we're not inside `Scheduler.runWithPriority`,
   // then we'll get the priority of the current running Scheduler task,
   // which is probably not what we want.
+  // == 旧的行为是使用 Scheduler 的优先级。这将 React 与 Scheduler 的内部组件耦合在一起，因此我们将其替换与上面的 currentUpdateLanePriority 一起使用
+  // == 作为一个例子，如果我们不在 `Scheduler.runWithPriority` 内部，可能会有问题，然后我们将获得当前正在运行的 Scheduler 任务的优先级，那可能不是我们想要的
   let lane;
   if (
     // TODO: Temporary. We're removing the concept of discrete updates.
     (executionContext & DiscreteEventContext) !== NoContext &&
     schedulerPriority === UserBlockingSchedulerPriority
   ) {
+    // == 返回 UpdateLane
     lane = findUpdateLane(InputDiscreteLanePriority, currentEventWipLanes);
   } else {
+    // == 根据 schedulerPriority 获取 LanePriority
     const schedulerLanePriority = schedulerPriorityToLanePriority(
       schedulerPriority,
     );
@@ -472,8 +533,11 @@ export function requestUpdateLane(fiber: Fiber): Lane {
       // In the new strategy, we will track the current update lane priority
       // inside React and use that priority to select a lane for this update.
       // For now, we're just logging when they're different so we can assess.
+      // == 在新策略中，我们将跟踪当前的更新 lane 优先级。在React内部，并使用该优先级选择一个 lane 做此次更新。
+      // == 现在，我们只是在记录它们何时不同，以便我们进行评估。
       const currentUpdateLanePriority = getCurrentUpdateLanePriority();
 
+      // == 获取 currentUpdateLanePriority
       if (
         schedulerLanePriority !== currentUpdateLanePriority &&
         currentUpdateLanePriority !== NoLanePriority
@@ -488,6 +552,7 @@ export function requestUpdateLane(fiber: Fiber): Lane {
       }
     }
 
+    // == 返回 UpdateLane
     lane = findUpdateLane(schedulerLanePriority, currentEventWipLanes);
   }
 
