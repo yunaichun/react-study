@@ -24,6 +24,7 @@ export function remove(key) {
   key._reactInternals = undefined;
 }
 
+// == 获取 key 的 _reactInternals 属性
 export function get(key) {
   return key._reactInternals;
 }

@@ -132,6 +132,7 @@ export function markRenderStopped(): void {
   }
 }
 
+// == Scheduled 性能标记
 export function markRenderScheduled(lane: Lane): void {
   if (enableSchedulingProfiler) {
     if (supportsUserTiming) {

@@ -26,6 +26,7 @@ import {
   findCurrentHostFiber,
   findCurrentHostFiberWithNoPortals,
 } from './ReactFiberTreeReflection';
+// == 获取 key 的 _reactInternals 属性
 import {get as getInstance} from 'shared/ReactInstanceMap';
 import {
   HostComponent,
@@ -35,12 +36,14 @@ import {
 } from './ReactWorkTags';
 import getComponentName from 'shared/getComponentName';
 import invariant from 'shared/invariant';
+// == 默认为 false
 import {enableSchedulingProfiler} from 'shared/ReactFeatureFlags';
 import ReactSharedInternals from 'shared/ReactSharedInternals';
 import {getPublicInstance} from './ReactFiberHostConfig';
 import {
   findCurrentUnmaskedContext,
   processChildContext,
+  // == 空对象
   emptyContextObject,
   isContextProvider as isLegacyContextProvider,
 } from './ReactFiberContext.old';
@@ -130,23 +133,30 @@ if (__DEV__) {
   didWarnAboutFindNodeInStrictMode = {};
 }
 
+// == 获取 fiber 实例的父级(stateNode) 的 context 属性
 function getContextForSubtree(
   parentComponent: ?React$Component<any, any>,
 ): Object {
+  // == 父节点 React 组件(初始为 null)
   if (!parentComponent) {
     return emptyContextObject;
   }
 
+  // == 获取 parentComponent 的 _reactInternals 属性
   const fiber = getInstance(parentComponent);
+  // == 获取 fiber 实例的父级(stateNode) 的 context 属性
   const parentContext = findCurrentUnmaskedContext(fiber);
 
+  // == 如果是 class 组件的话
   if (fiber.tag === ClassComponent) {
     const Component = fiber.type;
+    // == class 组件是否是 ContextProvider 判断
     if (isLegacyContextProvider(Component)) {
       return processChildContext(fiber, Component, parentContext);
     }
   }
 
+  // == 返回父级 Context
   return parentContext;
 }
 
@@ -250,7 +260,11 @@ export function createContainer(
   return createFiberRoot(containerInfo, tag, hydrate, hydrationCallbacks);
 }
 
-// == 更新容器
+// == 更新容器: 首次调用 updateContainer(children, fiberRoot, null, callback)
+// == element - React JSX 组件
+// == container - 根节点 FiberRoot
+// == parentComponent - 父节点 React 组件(初始为 null)
+// == callback - 回调函数
 export function updateContainer(
   element: ReactNodeList,
   container: OpaqueRoot,
@@ -274,11 +288,14 @@ export function updateContainer(
   // == 获取 lane
   const lane = requestUpdateLane(current);
 
+  // == 默认为 false
   if (enableSchedulingProfiler) {
     markRenderScheduled(lane);
   }
 
+  // == 获取 fiber 实例的父级(stateNode) 的 context 属性
   const context = getContextForSubtree(parentComponent);
+  // == 在根节点 FiberRoot 挂载 context 对象
   if (container.context === null) {
     container.context = context;
   } else {

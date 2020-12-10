@@ -193,10 +193,10 @@ function warnOnInvalidCallback(callback: mixed, callerName: string): void {
 }
 
 /* // == render 内部调用的方法
- parentComponent - 父节点
- children - 子节点
- container - 容器
- forceHydrate - 是否复用已经存在的 dom 节点【服务端渲染为 true】
+ parentComponent - 父节点 React 组件(初始为 null)
+ children - React JSX 组件
+ container - 原生 dom 节点
+ forceHydrate - 是否复用已经存在的 dom 节点(浏览器端初始为 false)
  callback - 更新完成之后的回调
 */
 function legacyRenderSubtreeIntoContainer(
@@ -316,7 +316,7 @@ export function hydrate(
 }
 
 /* // == 接收三个参数
- element - 渲染节点 
+ element - React JSX 组件
  container - 挂载节点
  callback - 回调
 */
@@ -345,12 +345,16 @@ export function render(
   }
 
   // == 最终调用 legacyRenderSubtreeIntoContainer
-  // == 第 1 和 4 个参数传入 null 和 undefined
   return legacyRenderSubtreeIntoContainer(
+    // == parentComponent - 父节点(初始为 null)
     null,
+    // == children - React JSX 组件
     element,
+    // == container - 原生 dom 节点
     container,
+    // == forceHydrate - 是否复用已经存在的 dom 节点(浏览器端初始为 false)
     false,
+    // == callback - 更新完成之后的回调
     callback,
   );
 }

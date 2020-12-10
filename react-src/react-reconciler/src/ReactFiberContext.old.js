@@ -11,6 +11,7 @@ import type {Fiber} from './ReactInternalTypes';
 import type {StackCursor} from './ReactFiberStack.old';
 
 import {isFiberMounted} from './ReactFiberTreeReflection';
+// == 默认为 false
 import {disableLegacyContext} from 'shared/ReactFeatureFlags';
 import {ClassComponent, HostRoot} from './ReactWorkTags';
 import getComponentName from 'shared/getComponentName';
@@ -126,10 +127,12 @@ function hasContextChanged(): boolean {
   }
 }
 
+// == class 组件是否是 ContextProvider 判断
 function isContextProvider(type: Function): boolean {
   if (disableLegacyContext) {
     return false;
   } else {
+    // == class 组件的 fiber node 的 type 属性上的 childContextTypes 属性存在
     const childContextTypes = type.childContextTypes;
     return childContextTypes !== null && childContextTypes !== undefined;
   }
@@ -180,6 +183,7 @@ function processChildContext(
   if (disableLegacyContext) {
     return parentContext;
   } else {
+    // == fiber 的父级 node
     const instance = fiber.stateNode;
     const childContextTypes = type.childContextTypes;
 
@@ -287,8 +291,11 @@ function invalidateContextProvider(
   }
 }
 
+// == 获取 fiber 实例的父级(stateNode) 的 context 属性
 function findCurrentUnmaskedContext(fiber: Fiber): Object {
+  // == 默认为 false
   if (disableLegacyContext) {
+    // == 返回空对象
     return emptyContextObject;
   } else {
     // Currently this is only used with renderSubtreeIntoContainer; not sure if it
@@ -299,13 +306,18 @@ function findCurrentUnmaskedContext(fiber: Fiber): Object {
         'This error is likely caused by a bug in React. Please file an issue.',
     );
 
+    // == 从当前节点开始向上遍历
     let node = fiber;
     do {
       switch (node.tag) {
+        // == jsx 组件
         case HostRoot:
+          // == 父级节点信息存储在 stateNode 中
           return node.stateNode.context;
+        // == Class 组件
         case ClassComponent: {
           const Component = node.type;
+          // == 当前节点的 type
           if (isContextProvider(Component)) {
             return node.stateNode.__reactInternalMemoizedMergedChildContext;
           }
