@@ -92,6 +92,7 @@ export function markLayoutEffectsStopped(): void {
   }
 }
 
+// == 标记被动 Effects 开始
 export function markPassiveEffectsStarted(lanes: Lanes): void {
   if (enableSchedulingProfiler) {
     if (supportsUserTiming) {
@@ -99,7 +100,7 @@ export function markPassiveEffectsStarted(lanes: Lanes): void {
     }
   }
 }
-
+// == 标记被动 Effects 结束
 export function markPassiveEffectsStopped(): void {
   if (enableSchedulingProfiler) {
     if (supportsUserTiming) {

@@ -106,6 +106,7 @@ function recordLayoutEffectDuration(fiber: Fiber): void {
   }
 }
 
+// == 记录 Passive Effect 持续时间
 function recordPassiveEffectDuration(fiber: Fiber): void {
   if (!enableProfilerTimer || !enableProfilerCommitHooks) {
     return;
@@ -141,6 +142,7 @@ function startLayoutEffectTimer(): void {
   layoutEffectStartTime = now();
 }
 
+// == 启动 Passive Effect 计时器
 function startPassiveEffectTimer(): void {
   if (!enableProfilerTimer || !enableProfilerCommitHooks) {
     return;

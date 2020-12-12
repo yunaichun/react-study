@@ -125,6 +125,7 @@ export function getCurrentUpdateLanePriority(): LanePriority {
   return currentUpdateLanePriority;
 }
 
+// == 设置当前更新优先级
 export function setCurrentUpdateLanePriority(newLanePriority: LanePriority) {
   currentUpdateLanePriority = newLanePriority;
 }

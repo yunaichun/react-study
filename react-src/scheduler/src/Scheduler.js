@@ -214,6 +214,7 @@ function workLoop(hasTimeRemaining, initialTime) {
   }
 }
 
+// == 执行优先级调度 - 循环调用 eventHandler 函数
 function unstable_runWithPriority(priorityLevel, eventHandler) {
   switch (priorityLevel) {
     case ImmediatePriority:
@@ -230,6 +231,7 @@ function unstable_runWithPriority(priorityLevel, eventHandler) {
   currentPriorityLevel = priorityLevel;
 
   try {
+    // == 循环调用 eventHandler 函数 
     return eventHandler();
   } finally {
     currentPriorityLevel = previousPriorityLevel;
@@ -276,6 +278,7 @@ function unstable_wrapCallback(callback) {
   };
 }
 
+// == 在下一个 tick 中恢复终端的 callback
 function unstable_scheduleCallback(priorityLevel, callback, options) {
   var currentTime = getCurrentTime();
 
@@ -311,6 +314,7 @@ function unstable_scheduleCallback(priorityLevel, callback, options) {
       break;
   }
 
+  // == 重新计算出新的 expirationTime
   var expirationTime = startTime + timeout;
 
   var newTask = {
@@ -374,10 +378,12 @@ function unstable_getFirstCallbackNode() {
   return peek(taskQueue);
 }
 
+// == 执行同步回调队列flushSyncCallbackQueue - 取消任务回调
 function unstable_cancelCallback(task) {
   if (enableProfiling) {
     if (task.isQueued) {
       const currentTime = getCurrentTime();
+      // == 标记任务取消
       markTaskCanceled(task, currentTime);
       task.isQueued = false;
     }
@@ -386,6 +392,9 @@ function unstable_cancelCallback(task) {
   // Null out the callback to indicate the task has been canceled. (Can't
   // remove from the queue because you can't remove arbitrary nodes from an
   // array based heap, only the first one.)
+  // == 使回调无效，以指示任务已被取消。 （不能
+  // == 从队列中删除，因为您无法从
+  // == 基于数组的堆，只有第一个。）
   task.callback = null;
 }
 

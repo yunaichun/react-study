@@ -1093,6 +1093,7 @@ function performSyncWorkOnRoot(root) {
     'Should not already be working.',
   );
 
+  // == 执行优先级调度 - 循环调用 flushPassiveEffectsImpl 函数
   flushPassiveEffects();
 
   let lanes;
@@ -1103,6 +1104,7 @@ function performSyncWorkOnRoot(root) {
   ) {
     // There's a partial tree, and at least one of its lanes has expired. Finish
     // rendering it before rendering the rest of the expired work.
+    // == 这里有一棵不完整的树，并且至少其中一个 lane 已经过期。在渲染其余过期工作之前先渲染它。
     lanes = workInProgressRootRenderLanes;
     exitStatus = renderRootSync(root, lanes);
     if (
@@ -1119,6 +1121,12 @@ function performSyncWorkOnRoot(root) {
       // Note that this only happens when part of the tree is rendered
       // concurrently. If the whole tree is rendered synchronously, then there
       // are no interleaved events.
+      // == 渲染包括在渲染阶段更新的 lane。
+      // == 例如，当取消隐藏隐藏的树时，包括所有 lane 隐藏树时先前已跳过的内容。
+      // == 那个 lane 是我们开始渲染的 lane 的超集。
+      // 
+      // == 请注意，这仅在部分树被渲染时发生
+      // == 同时。如果整个树是同步渲染的，那么那里没有交错事件。
       lanes = getNextLanes(root, lanes);
       exitStatus = renderRootSync(root, lanes);
     }
@@ -1132,6 +1140,8 @@ function performSyncWorkOnRoot(root) {
 
     // If an error occurred during hydration,
     // discard server response and fall back to client side render.
+    // == 如果在服务端渲染过程中发生错误，
+    // == 放弃服务器响应，然后退回到客户端渲染。
     if (root.hydrate) {
       root.hydrate = false;
       clearContainer(root.containerInfo);
@@ -1141,6 +1151,9 @@ function performSyncWorkOnRoot(root) {
     // synchronously to block concurrent data mutations, and we'll includes
     // all pending updates are included. If it still fails after the second
     // attempt, we'll give up and commit the resulting tree.
+    // == 如果出现错误，请尝试渲染一次。我们将渲染同步阻止并发数据突变，
+    // == 我们将包括所有待处理的更新。
+    // == 如果第二次后仍然失败尝试，我们将放弃并提交结果树。
     lanes = getLanesToRetrySynchronouslyOnError(root);
     if (lanes !== NoLanes) {
       exitStatus = renderRootSync(root, lanes);
@@ -1157,6 +1170,8 @@ function performSyncWorkOnRoot(root) {
 
   // We now have a consistent tree. Because this is a sync render, we
   // will commit it even if something suspended.
+  // == 现在，我们有了一个一致的树。因为这是同步渲染，所以我们
+  // == 即使暂停，也将提交它。
   const finishedWork: Fiber = (root.current.alternate: any);
   root.finishedWork = finishedWork;
   root.finishedLanes = lanes;
@@ -1164,6 +1179,7 @@ function performSyncWorkOnRoot(root) {
 
   // Before exiting, make sure there's a callback scheduled for the next
   // pending level.
+  // == 在退出之前，请确保安排了下一个回调等待优先级
   ensureRootIsScheduled(root, now());
 
   return null;
@@ -1540,6 +1556,7 @@ function popDispatcher(prevDispatcher) {
   ReactCurrentDispatcher.current = prevDispatcher;
 }
 
+// == push Interactions
 function pushInteractions(root) {
   if (enableSchedulerTracing) {
     const prevInteractions: Set<Interaction> | null = __interactionsRef.current;
@@ -1549,6 +1566,7 @@ function pushInteractions(root) {
   return null;
 }
 
+// == pop Interactions
 function popInteractions(prevInteractions) {
   if (enableSchedulerTracing) {
     __interactionsRef.current = prevInteractions;
@@ -2561,25 +2579,37 @@ function commitLayoutEffects(root: FiberRoot, committedLanes: Lanes) {
   }
 }
 
+// == 执行优先级调度 - 循环调用 flushPassiveEffectsImpl 函数
 export function flushPassiveEffects(): boolean {
+  // == 返回是否清除了被动 effects
   // Returns whether passive effects were flushed.
+  // == 待更新优先级
   if (pendingPassiveEffectsRenderPriority !== NoSchedulerPriority) {
     const priorityLevel =
       pendingPassiveEffectsRenderPriority > NormalSchedulerPriority
         ? NormalSchedulerPriority
         : pendingPassiveEffectsRenderPriority;
+    // == 重置
     pendingPassiveEffectsRenderPriority = NoSchedulerPriority;
     if (decoupleUpdatePriorityFromScheduler) {
+      // == 获取 currentUpdateLanePriority
       const previousLanePriority = getCurrentUpdateLanePriority();
       try {
+        // == 设置当前更新优先级
         setCurrentUpdateLanePriority(
+          // == 根据 schedulerPriority 获取 LanePriority
           schedulerPriorityToLanePriority(priorityLevel),
         );
+        // ==============================================================
+        // == 执行优先级调度 - 循环调用 flushPassiveEffectsImpl 函数
+        // ==============================================================
         return runWithPriority(priorityLevel, flushPassiveEffectsImpl);
       } finally {
+        // == 设置当前更新优先级
         setCurrentUpdateLanePriority(previousLanePriority);
       }
     } else {
+      // == runWithPriority 执行优先级调度 - 循环调用 flushPassiveEffectsImpl 函数
       return runWithPriority(priorityLevel, flushPassiveEffectsImpl);
     }
   }
@@ -2639,11 +2669,14 @@ function invokePassiveEffectCreate(effect: HookEffect): void {
   effect.destroy = create();
 }
 
+// == runWithPriority 执行优先级调度 - 循环调用 flushPassiveEffectsImpl 函数
+// == 被动 Effects 过程
 function flushPassiveEffectsImpl() {
   if (rootWithPendingPassiveEffects === null) {
     return false;
   }
 
+  // == root、lanes
   const root = rootWithPendingPassiveEffects;
   const lanes = pendingPassiveEffectsLanes;
   rootWithPendingPassiveEffects = null;
@@ -2654,22 +2687,26 @@ function flushPassiveEffectsImpl() {
     'Cannot flush passive effects while already rendering.',
   );
 
+  // == 记录被动 Effects 开始
   if (__DEV__) {
     if (enableDebugTracing) {
       logPassiveEffectsStarted(lanes);
     }
   }
 
+  // == 标记被动 Effects 开始
   if (enableSchedulingProfiler) {
     markPassiveEffectsStarted(lanes);
   }
 
+  // == isFlushingPassiveEffects 标记为 true
   if (__DEV__) {
     isFlushingPassiveEffects = true;
   }
 
   const prevExecutionContext = executionContext;
   executionContext |= CommitContext;
+  // == push Interactions
   const prevInteractions = pushInteractions(root);
 
   // It's important that ALL pending passive effect destroy functions are called
@@ -2678,8 +2715,13 @@ function flushPassiveEffectsImpl() {
   // e.g. a destroy function in one component may unintentionally override a ref
   // value set by a create function in another component.
   // Layout effects have the same constraint.
+  // == 重要的是，在调用任何 passive effect create 函数之前必须调用所有待处理的 passive effect destroy 函数
+  // == 否则，同级组件中的效果可能会相互干扰。
+  // == 例如一个组件中的 destroy 函数可能会无意中覆盖由另一个组件中的create函数设置的 ref 值.
+  // == Layout effects 具有相同的约束。
 
   // First pass: Destroy stale passive effects.
+  // == 第一步：旧的 passive effects 执行 destory
   const unmountEffects = pendingPassiveHookEffectsUnmount;
   pendingPassiveHookEffectsUnmount = [];
   for (let i = 0; i < unmountEffects.length; i += 2) {
@@ -2724,12 +2766,16 @@ function flushPassiveEffectsImpl() {
             fiber.mode & ProfileMode
           ) {
             try {
+              // == 启动 Passive Effect 计时器
               startPassiveEffectTimer();
+              // == 旧的 passive effects 执行 destory
               destroy();
             } finally {
+              // == 记录 Passive Effect 持续时间
               recordPassiveEffectDuration(fiber);
             }
           } else {
+            // == 旧的 passive effects 执行 destory
             destroy();
           }
         } catch (error) {
@@ -2740,6 +2786,7 @@ function flushPassiveEffectsImpl() {
     }
   }
   // Second pass: Create new passive effects.
+  // == 第二步：新的 passive effects create 创建
   const mountEffects = pendingPassiveHookEffectsMount;
   pendingPassiveHookEffectsMount = [];
   for (let i = 0; i < mountEffects.length; i += 2) {
@@ -2773,12 +2820,16 @@ function flushPassiveEffectsImpl() {
           fiber.mode & ProfileMode
         ) {
           try {
+            // == 启动 Passive Effect 计时器
             startPassiveEffectTimer();
+            // == 新的 passive effects create 创建
             effect.destroy = create();
           } finally {
+            // == 记录 Passive Effect 持续时间
             recordPassiveEffectDuration(fiber);
           }
         } else {
+          // == 旧的 passive effects 执行 destory
           effect.destroy = create();
         }
       } catch (error) {
@@ -2791,17 +2842,22 @@ function flushPassiveEffectsImpl() {
   // Note: This currently assumes there are no passive effects on the root fiber
   // because the root is not part of its own effect list.
   // This could change in the future.
+  // == 注意：当前假设根 fiber 没有 passive effects
+  // == 因为根 fiber 不属于自己的 effect 列表，其将来可能会改变。
   let effect = root.current.firstEffect;
   while (effect !== null) {
     const nextNextEffect = effect.nextEffect;
     // Remove nextEffect pointer to assist GC
     effect.nextEffect = null;
     if (effect.flags & Deletion) {
+      // == 在 Effects 之后分离 Fiber 
       detachFiberAfterEffects(effect);
     }
+    // == root.current.firstEffect 设置为 root.current.firstEffect.nextEffect
     effect = nextNextEffect;
   }
 
+  // == commit Passive Effect 持续时长
   if (enableProfilerTimer && enableProfilerCommitHooks) {
     const profilerEffects = pendingPassiveProfilerEffects;
     pendingPassiveProfilerEffects = [];
@@ -2811,27 +2867,32 @@ function flushPassiveEffectsImpl() {
     }
   }
 
+  // == pop Interactions
   if (enableSchedulerTracing) {
     popInteractions(((prevInteractions: any): Set<Interaction>));
     finishPendingInteractions(root, lanes);
   }
 
+  // == isFlushingPassiveEffects 标记为 false
   if (__DEV__) {
     isFlushingPassiveEffects = false;
   }
 
+  // == 记录被动 Effects 结束
   if (__DEV__) {
     if (enableDebugTracing) {
       logPassiveEffectsStopped();
     }
   }
 
+  // == 标记被动 Effects 结束
   if (enableSchedulingProfiler) {
     markPassiveEffectsStopped();
   }
 
   executionContext = prevExecutionContext;
 
+  // == 执行同步回调队列
   flushSyncCallbackQueue();
 
   // If additional passive effects were scheduled, increment a counter. If this
@@ -2882,6 +2943,7 @@ function captureCommitPhaseErrorOnRoot(
   }
 }
 
+// == 捕获 Commit 阶段的错误: 执行 componentDidCatch 函数
 export function captureCommitPhaseError(
   sourceFiber: Fiber,
   nearestMountedAncestor: Fiber | null,
@@ -2903,12 +2965,15 @@ export function captureCommitPhaseError(
 
   while (fiber !== null) {
     if (fiber.tag === HostRoot) {
+      // == JSX 组件
       captureCommitPhaseErrorOnRoot(fiber, sourceFiber, error);
       return;
     } else if (fiber.tag === ClassComponent) {
+      // == class 组件
       const ctor = fiber.type;
       const instance = fiber.stateNode;
       if (
+        // == getDerivedStateFromError、componentDidCatch 函数存在
         typeof ctor.getDerivedStateFromError === 'function' ||
         (typeof instance.componentDidCatch === 'function' &&
           !isAlreadyFailedLegacyErrorBoundary(instance))
@@ -2938,6 +3003,7 @@ export function captureCommitPhaseError(
             !isAlreadyFailedLegacyErrorBoundary(instance)
           ) {
             try {
+              // == 执行 componentDidCatch 函数
               instance.componentDidCatch(error, errorInfo);
             } catch (errorToIgnore) {
               // TODO Ignore this error? Rethrow it?
@@ -3916,6 +3982,7 @@ export function act(callback: () => Thenable<mixed>): Thenable<void> {
   }
 }
 
+// == 在 Effects 之后分离 Fiber
 function detachFiberAfterEffects(fiber: Fiber): void {
   fiber.sibling = null;
   fiber.stateNode = null;

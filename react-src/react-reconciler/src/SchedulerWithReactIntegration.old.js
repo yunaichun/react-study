@@ -122,6 +122,7 @@ export function getCurrentPriorityLevel(): ReactPriorityLevel {
   }
 }
 
+// == 根据 LanePriority 获取 schedulerPriority
 function reactPriorityToSchedulerPriority(reactPriorityLevel) {
   switch (reactPriorityLevel) {
     case ImmediatePriority:
@@ -139,11 +140,14 @@ function reactPriorityToSchedulerPriority(reactPriorityLevel) {
   }
 }
 
+// == 执行优先级调度 - 循环调用 fn 函数
 export function runWithPriority<T>(
   reactPriorityLevel: ReactPriorityLevel,
   fn: () => T,
 ): T {
+  // == 根据 LanePriority 获取 schedulerPriority
   const priorityLevel = reactPriorityToSchedulerPriority(reactPriorityLevel);
+  // == 执行优先级调度 - 循环调用 fn 函数
   return Scheduler_runWithPriority(priorityLevel, fn);
 }
 
@@ -180,27 +184,38 @@ export function cancelCallback(callbackNode: mixed) {
   }
 }
 
+// == 执行同步回调队列
 export function flushSyncCallbackQueue() {
+  // == immediateQueueCallbackNode 不为 null
   if (immediateQueueCallbackNode !== null) {
     const node = immediateQueueCallbackNode;
     immediateQueueCallbackNode = null;
+    // == 取消任务回调
     Scheduler_cancelCallback(node);
   }
+  // == 执行同步回调队列接口
   flushSyncCallbackQueueImpl();
 }
 
+// == 执行同步回调队列接口
 function flushSyncCallbackQueueImpl() {
   if (!isFlushingSyncQueue && syncQueue !== null) {
     // Prevent re-entrancy.
+    // == 防止再次进入
     isFlushingSyncQueue = true;
     let i = 0;
+    // == 将更新优先级与调度程序分离
     if (decoupleUpdatePriorityFromScheduler) {
+      // == 获取 currentUpdateLanePriority
       const previousLanePriority = getCurrentUpdateLanePriority();
       try {
         const isSync = true;
         const queue = syncQueue;
+        // == 设置当前更新优先级
         setCurrentUpdateLanePriority(SyncLanePriority);
+        // == 执行优先级调度 - 循环调用 fn 函数
         runWithPriority(ImmediatePriority, () => {
+          // == 循环执行 syncQueue 的每一项
           for (; i < queue.length; i++) {
             let callback = queue[i];
             do {
@@ -208,19 +223,23 @@ function flushSyncCallbackQueueImpl() {
             } while (callback !== null);
           }
         });
+        // == 将 syncQueue 置为空
         syncQueue = null;
       } catch (error) {
         // If something throws, leave the remaining callbacks on the queue.
+        // == 如果发生异常，将其余的回调保留在队列中。
         if (syncQueue !== null) {
           syncQueue = syncQueue.slice(i + 1);
         }
         // Resume flushing in the next tick
+        // == 在下一个 tick 中恢复
         Scheduler_scheduleCallback(
           Scheduler_ImmediatePriority,
           flushSyncCallbackQueue,
         );
         throw error;
       } finally {
+        // == 设置当前更新优先级
         setCurrentUpdateLanePriority(previousLanePriority);
         isFlushingSyncQueue = false;
       }
@@ -229,6 +248,7 @@ function flushSyncCallbackQueueImpl() {
         const isSync = true;
         const queue = syncQueue;
         runWithPriority(ImmediatePriority, () => {
+          // == 循环执行 syncQueue 的每一项
           for (; i < queue.length; i++) {
             let callback = queue[i];
             do {
@@ -239,16 +259,19 @@ function flushSyncCallbackQueueImpl() {
         syncQueue = null;
       } catch (error) {
         // If something throws, leave the remaining callbacks on the queue.
+        // == 如果发生异常，将其余的回调保留在队列中。
         if (syncQueue !== null) {
           syncQueue = syncQueue.slice(i + 1);
         }
         // Resume flushing in the next tick
+        // == 在下一个 tick 中恢复
         Scheduler_scheduleCallback(
           Scheduler_ImmediatePriority,
           flushSyncCallbackQueue,
         );
         throw error;
       } finally {
+        // == 设置当前更新优先级
         isFlushingSyncQueue = false;
       }
     }

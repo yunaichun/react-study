@@ -404,6 +404,7 @@ function schedulePassiveEffects(finishedWork: Fiber) {
   }
 }
 
+// == commit Passive Effect 持续时长
 export function commitPassiveEffectDurations(
   finishedRoot: FiberRoot,
   finishedWork: Fiber,

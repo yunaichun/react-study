@@ -154,6 +154,7 @@ export function logLayoutEffectsStopped(): void {
   }
 }
 
+// == 记录被动 Effects 开始
 export function logPassiveEffectsStarted(lanes: Lanes): void {
   if (__DEV__) {
     if (enableDebugTracing) {
@@ -167,6 +168,7 @@ export function logPassiveEffectsStarted(lanes: Lanes): void {
   }
 }
 
+// == 记录被动 Effects 结束
 export function logPassiveEffectsStopped(): void {
   if (__DEV__) {
     if (enableDebugTracing) {
