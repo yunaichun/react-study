@@ -1099,6 +1099,7 @@ function performSyncWorkOnRoot(root) {
   let lanes;
   let exitStatus;
   if (
+    // == 根 root 是 workInProgressRoot
     root === workInProgressRoot &&
     includesSomeLane(root.expiredLanes, workInProgressRootRenderLanes)
   ) {
@@ -1175,7 +1176,7 @@ function performSyncWorkOnRoot(root) {
   const finishedWork: Fiber = (root.current.alternate: any);
   root.finishedWork = finishedWork;
   root.finishedLanes = lanes;
-  commitRoot(root);
+   (root);
 
   // Before exiting, make sure there's a callback scheduled for the next
   // pending level.
@@ -1439,6 +1440,7 @@ export function popRenderLanes(fiber: Fiber) {
   popFromStack(subtreeRenderLanesCursor, fiber);
 }
 
+// == 如果 root 或 lanes 已更改，则丢弃现有堆栈并准备一个新的
 function prepareFreshStack(root: FiberRoot, lanes: Lanes) {
   root.finishedWork = null;
   root.finishedLanes = NoLanes;
@@ -1539,6 +1541,7 @@ function handleError(root, thrownValue): void {
   } while (true);
 }
 
+// == 返回 prevDispatcher
 function pushDispatcher() {
   const prevDispatcher = ReactCurrentDispatcher.current;
   ReactCurrentDispatcher.current = ContextOnlyDispatcher;
@@ -1546,6 +1549,8 @@ function pushDispatcher() {
     // The React isomorphic package does not include a default dispatcher.
     // Instead the first renderer will lazily attach one, in order to give
     // nicer error messages.
+    // == React同构包不包括默认的调度程序。
+    // == 相反，第一个渲染器将懒惰地附加一个，以便提供更好的错误消息。
     return ContextOnlyDispatcher;
   } else {
     return prevDispatcher;
@@ -1630,26 +1635,34 @@ export function renderHasNotSuspendedYet(): boolean {
   return workInProgressRootExitStatus === RootIncomplete;
 }
 
+// == 同步渲染 根 root
 function renderRootSync(root: FiberRoot, lanes: Lanes) {
   const prevExecutionContext = executionContext;
   executionContext |= RenderContext;
+  // == 返回 prevDispatcher
   const prevDispatcher = pushDispatcher();
 
   // If the root or lanes have changed, throw out the existing stack
   // and prepare a fresh one. Otherwise we'll continue where we left off.
+  // == 如果 root 或 lanes 已更改，则丢弃现有堆栈并准备一个新的。否则，我们将从中断的地方继续。
   if (workInProgressRoot !== root || workInProgressRootRenderLanes !== lanes) {
+    // == 如果 root 或 lanes 已更改，则丢弃现有堆栈并准备一个新的
     prepareFreshStack(root, lanes);
+    // == 如果 root 或 lanes 已更改，则丢弃现有堆栈并准备一个新的。否则，我们将从中断的地方继续。
     startWorkOnPendingInteractions(root, lanes);
   }
 
+  // == push Interactions
   const prevInteractions = pushInteractions(root);
 
+  // == 渲染开始日志
   if (__DEV__) {
     if (enableDebugTracing) {
       logRenderStarted(lanes);
     }
   }
 
+  // == 标记渲染开始
   if (enableSchedulingProfiler) {
     markRenderStarted(lanes);
   }
@@ -1662,7 +1675,9 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
       handleError(root, thrownValue);
     }
   } while (true);
+  // == 重置 Context 依赖的变量
   resetContextDependencies();
+  // == pop Interactions
   if (enableSchedulerTracing) {
     popInteractions(((prevInteractions: any): Set<Interaction>));
   }
@@ -1679,17 +1694,20 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
     );
   }
 
+  // == 渲染开始结束
   if (__DEV__) {
     if (enableDebugTracing) {
       logRenderStopped();
     }
   }
 
+  // == 标记渲染结束
   if (enableSchedulingProfiler) {
     markRenderStopped();
   }
 
   // Set this to null to indicate there's no in-progress render.
+  // == 将此设置为null表示没有正在进行的渲染。
   workInProgressRoot = null;
   workInProgressRootRenderLanes = NoLanes;
 
@@ -3676,6 +3694,7 @@ function schedulePendingInteractions(root: FiberRoot, lane: Lane | Lanes) {
   scheduleInteractions(root, lane, __interactionsRef.current);
 }
 
+// == 如果 root 或 lanes 已更改，则丢弃现有堆栈并准备一个新的。否则，我们将从中断的地方继续。
 function startWorkOnPendingInteractions(root: FiberRoot, lanes: Lanes) {
   // This is called when new work is started on a root.
   if (!enableSchedulerTracing) {

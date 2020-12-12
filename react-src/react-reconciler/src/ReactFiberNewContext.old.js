@@ -49,9 +49,11 @@ let lastContextWithAllBitsObserved: ReactContext<any> | null = null;
 
 let isDisallowedContextReadInDEV: boolean = false;
 
+// == 重置 Context 依赖的变量
 export function resetContextDependencies(): void {
   // This is called right before React yields execution, to ensure `readContext`
   // cannot be called outside the render phase.
+  // == 这在React产生执行之前被调用，以确保`readContext`。无法在渲染阶段之外调用。
   currentlyRenderingFiber = null;
   lastContextDependency = null;
   lastContextWithAllBitsObserved = null;

@@ -109,6 +109,7 @@ export function markPassiveEffectsStopped(): void {
   }
 }
 
+// == 标记渲染开始
 export function markRenderStarted(lanes: Lanes): void {
   if (enableSchedulingProfiler) {
     if (supportsUserTiming) {
@@ -125,6 +126,7 @@ export function markRenderYielded(): void {
   }
 }
 
+// == 标记渲染结束
 export function markRenderStopped(): void {
   if (enableSchedulingProfiler) {
     if (supportsUserTiming) {

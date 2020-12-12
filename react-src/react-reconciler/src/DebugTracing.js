@@ -177,6 +177,7 @@ export function logPassiveEffectsStopped(): void {
   }
 }
 
+// == 渲染开始日志
 export function logRenderStarted(lanes: Lanes): void {
   if (__DEV__) {
     if (enableDebugTracing) {
@@ -190,6 +191,7 @@ export function logRenderStarted(lanes: Lanes): void {
   }
 }
 
+// == 渲染开始结束
 export function logRenderStopped(): void {
   if (__DEV__) {
     if (enableDebugTracing) {
