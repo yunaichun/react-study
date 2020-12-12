@@ -265,6 +265,13 @@ export function createContainer(
 // == container - 根节点 FiberRoot
 // == parentComponent - 父节点 React 组件(初始为 null)
 // == callback - 回调函数
+// == 流程如下:
+// == updateContainer -> 
+// == scheduleUpdateOnFiber(container.current) -> 
+// == performSyncWorkOnRoot(rootFiber)
+// == 1. flushPassiveEffects -> runWithPriority -> flushPassiveEffectsImpl -> flushSyncCallbackQueue
+// == 2. renderRootSync -> workLoopSync -> performUnitOfWork(workInProgress)
+// == 3. commitRoot(rootFiber)
 export function updateContainer(
   element: ReactNodeList,
   container: OpaqueRoot,

@@ -1084,16 +1084,19 @@ function markRootSuspended(root, suspendedLanes) {
 
 // This is the entry point for synchronous tasks that don't go
 // through Scheduler
-// == 1. 首先, 创建一个新节点
-// == 2. 通过 reconcileChildren 函数来创建新的 Fiber 树
-// == 3. 最后, 搜索下一个工作单元: 首先子节点 -> 然后右兄弟节点 -> 最后父节点. 依此类推
+// == updateContainer -> 
+// == scheduleUpdateOnFiber(container.current) -> 
+// == performSyncWorkOnRoot(rootFiber)
+// == 1. flushPassiveEffects -> runWithPriority -> flushPassiveEffectsImpl -> flushSyncCallbackQueue
+// == 2. renderRootSync -> workLoopSync -> performUnitOfWork(workInProgress)
+// == 3. commitRoot(rootFiber)
 function performSyncWorkOnRoot(root) {
   invariant(
     (executionContext & (RenderContext | CommitContext)) === NoContext,
     'Should not already be working.',
   );
 
-  // == 执行优先级调度 - 循环调用 flushPassiveEffectsImpl 函数
+  // == 1: 执行优先级调度 - 循环调用 flushPassiveEffectsImpl 函数
   flushPassiveEffects();
 
   let lanes;
@@ -1107,6 +1110,7 @@ function performSyncWorkOnRoot(root) {
     // rendering it before rendering the rest of the expired work.
     // == 这里有一棵不完整的树，并且至少其中一个 lane 已经过期。在渲染其余过期工作之前先渲染它。
     lanes = workInProgressRootRenderLanes;
+    // == 2: 同步渲染 根 root
     exitStatus = renderRootSync(root, lanes);
     if (
       includesSomeLane(
@@ -1171,12 +1175,12 @@ function performSyncWorkOnRoot(root) {
 
   // We now have a consistent tree. Because this is a sync render, we
   // will commit it even if something suspended.
-  // == 现在，我们有了一个一致的树。因为这是同步渲染，所以我们
-  // == 即使暂停，也将提交它。
+  // == 现在，我们有了一个一致的树。因为这是同步渲染，所以我们即使暂停，也将提交它。
   const finishedWork: Fiber = (root.current.alternate: any);
   root.finishedWork = finishedWork;
   root.finishedLanes = lanes;
-   (root);
+  // == 3: 同步渲染 根 root
+  commitRoot(root);
 
   // Before exiting, make sure there's a callback scheduled for the next
   // pending level.
@@ -1635,7 +1639,7 @@ export function renderHasNotSuspendedYet(): boolean {
   return workInProgressRootExitStatus === RootIncomplete;
 }
 
-// == 同步渲染 根 root
+// == 2. 同步渲染 根 root
 function renderRootSync(root: FiberRoot, lanes: Lanes) {
   const prevExecutionContext = executionContext;
   executionContext |= RenderContext;
@@ -1669,6 +1673,7 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
 
   do {
     try {
+      // == 浏览器空闲时间: 执行同步工作单元
       workLoopSync();
       break;
     } catch (thrownValue) {
@@ -1715,10 +1720,14 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
 }
 
 // The work loop is an extremely hot path. Tell Closure not to inline it.
+// == 工作循环是一条非常热的路径。告诉Closure不要内联它。
 /** @noinline */
+// == 浏览器空闲时间: 执行同步工作单元
 function workLoopSync() {
   // Already timed out, so perform work without checking if we need to yield.
+  // == 已经超时，因此在执行工作时无需检查是否需要屈服。
   while (workInProgress !== null) {
+    // == 执行每个工作单元
     performUnitOfWork(workInProgress);
   }
 }
@@ -1800,6 +1809,7 @@ function workLoopConcurrent() {
   }
 }
 
+// == 执行每个工作单元
 function performUnitOfWork(unitOfWork: Fiber): void {
   // The current, flushed, state of this fiber is the alternate. Ideally
   // nothing should rely on this, but relying on it here means that we don't
@@ -2597,7 +2607,7 @@ function commitLayoutEffects(root: FiberRoot, committedLanes: Lanes) {
   }
 }
 
-// == 执行优先级调度 - 循环调用 flushPassiveEffectsImpl 函数
+// == 1: 执行优先级调度 - 循环调用 flushPassiveEffectsImpl 函数
 export function flushPassiveEffects(): boolean {
   // == 返回是否清除了被动 effects
   // Returns whether passive effects were flushed.
