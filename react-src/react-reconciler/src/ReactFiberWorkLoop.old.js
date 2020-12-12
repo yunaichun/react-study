@@ -362,7 +362,9 @@ let pendingPassiveProfilerEffects: Array<Fiber> = [];
 let rootsWithPendingDiscreteUpdates: Set<FiberRoot> | null = null;
 
 // Use these to prevent an infinite loop of nested updates
+// == 使用这些来防止嵌套更新的无限循环
 const NESTED_UPDATE_LIMIT = 50;
+// == 当前嵌套循环次数
 let nestedUpdateCount: number = 0;
 let rootWithNestedUpdates: FiberRoot | null = null;
 
@@ -581,21 +583,28 @@ function requestRetryLane(fiber: Fiber) {
   return findRetryLane(currentEventWipLanes);
 }
 
+// == 执行 Fiber 节点的更新调度
 export function scheduleUpdateOnFiber(
+  // == 容器节点挂载的 FiberNode
   fiber: Fiber,
   lane: Lane,
   eventTime: number,
 ) {
+  // == 校验是否无限循环
   checkForNestedUpdates();
+  // == 开发环境: 渲染阶段更新相关警告
   warnAboutRenderPhaseUpdatesInDEV(fiber);
 
+  // == alternate 为旧 Fiber 节点的引用: 合并 alternate 的 lanes 属性
   const root = markUpdateLaneFromFiberToRoot(fiber, lane);
   if (root === null) {
+    // == 根节点为 null 的情况: 表示还未挂载呢
     warnAboutUpdateOnUnmountedFiberInDEV(fiber);
     return null;
   }
 
   // Mark that the root has a pending update.
+  // == 标记根节点被更新过
   markRootUpdated(root, lane, eventTime);
 
   if (root === workInProgressRoot) {
@@ -604,10 +613,14 @@ export function scheduleUpdateOnFiber(
     // `deferRenderPhaseUpdateToNextBatch` flag is off and this is a render
     // phase update. In that case, we don't treat render phase updates as if
     // they were interleaved, for backwards compat reasons.
+    // == 收到了渲染中的一棵树的更新。标记在此 root 上有交错的更新工作。
+    // == 除非 DeferRenderPhaseUpdateToNextBatch 标志已关闭，这是一个渲染阶段更新。
+    // == 在这种情况下，我们不会像对待渲染阶段更新那样对待由于向后兼容。
     if (
       deferRenderPhaseUpdateToNextBatch ||
       (executionContext & RenderContext) === NoContext
     ) {
+      // == a | b 只要有一个为 1 则为 1
       workInProgressRootUpdatedLanes = mergeLanes(
         workInProgressRootUpdatedLanes,
         lane,
@@ -620,27 +633,42 @@ export function scheduleUpdateOnFiber(
       // effect of interrupting the current render and switching to the update.
       // TODO: Make sure this doesn't override pings that happen while we've
       // already started rendering.
+      // == 根 root 已经暂停了一段时间，这意味着渲染肯定不会完成。
+      // == 由于我们有新的更新，因此将其标记为现在暂停，即标记为将来临的更新。
+      // == 这有中断当前渲染并切换到更新的效果。
+      // == 待办事项：请确保此操作不会覆盖我们执行操作时执行的ping操作已经开始渲染。
+      // == 在渲染阶段有新的更新: 标记当前 root 暂停更新
       markRootSuspended(root, workInProgressRootRenderLanes);
     }
   }
 
   // TODO: requestUpdateLanePriority also reads the priority. Pass the
   // priority as an argument to that function and this one.
+  // == 待办事项：requestUpdateLanePriority 也读取优先级。通过优先级作为该功能和该功能的参数。
   const priorityLevel = getCurrentPriorityLevel();
 
   if (lane === SyncLane) {
+    // == 同步更新
     if (
       // Check if we're inside unbatchedUpdates
+      // == 检查我们是否在未批处理的更新中
       (executionContext & LegacyUnbatchedContext) !== NoContext &&
       // Check if we're not already rendering
+      // == 检查我们是否尚未渲染
       (executionContext & (RenderContext | CommitContext)) === NoContext
     ) {
       // Register pending interactions on the root to avoid losing traced interaction data.
+      // == 在根 root 上注册待处理的交互，以避免丢失跟踪的交互数据
       schedulePendingInteractions(root, lane);
 
       // This is a legacy edge case. The initial mount of a ReactDOM.render-ed
       // root inside of batchedUpdates should be synchronous, but layout updates
       // should be deferred until the end of the batch.
+      // == 这是一个遗留的边缘情况。 ReactDOM.render-ed 的初始安装 batchedUpdates内部的根应该是同步的，
+      // == 但是布局更新应该推迟到批处理结束。
+      // == 1. 首先, 创建一个新节点
+      // == 2. 通过 reconcileChildren 函数来创建新的 Fiber 树
+      // == 3. 最后, 搜索下一个工作单元: 首先子节点 -> 然后右兄弟节点 -> 最后父节点. 依此类推
       performSyncWorkOnRoot(root);
     } else {
       ensureRootIsScheduled(root, eventTime);
@@ -657,6 +685,7 @@ export function scheduleUpdateOnFiber(
     }
   } else {
     // Schedule a discrete update but only if it's not Sync.
+    // == 调度离散更新，但仅在不同步时进行。
     if (
       (executionContext & DiscreteEventContext) !== NoContext &&
       // Only updates at user-blocking priority or greater are considered
@@ -689,13 +718,19 @@ export function scheduleUpdateOnFiber(
 // work without treating it as a typical update that originates from an event;
 // e.g. retrying a Suspense boundary isn't an update, but it does schedule work
 // on a fiber.
+// == alternate 为旧 Fiber 节点的引用: 合并 alternate 的 lanes 属性
+// == 这被拆分为一个单独的函数，因此我们可以在 pending 阶段将 Fiber 标记为来自事件源上典型的更新。
+// == 例如重试 Suspense 边界不是更新，但确实可以在 Fiber 上进行了调度。
 function markUpdateLaneFromFiberToRoot(
+  // == 容器节点挂载的 FiberNode
   sourceFiber: Fiber,
   lane: Lane,
 ): FiberRoot | null {
   // Update the source fiber's lanes
+  // == 更新 source Fiber 的 lane: 只要有一个为 1 则为 1
   sourceFiber.lanes = mergeLanes(sourceFiber.lanes, lane);
   let alternate = sourceFiber.alternate;
+  // == alternate 为旧 Fiber 节点的引用
   if (alternate !== null) {
     alternate.lanes = mergeLanes(alternate.lanes, lane);
   }
@@ -704,16 +739,19 @@ function markUpdateLaneFromFiberToRoot(
       alternate === null &&
       (sourceFiber.flags & (Placement | Hydrating)) !== NoFlags
     ) {
+      // == 开发环境: 尚未挂载的 Fiber 更新操作的警告
       warnAboutUpdateOnNotYetMountedFiberInDEV(sourceFiber);
     }
   }
   // Walk the parent path to the root and update the child expiration time.
+  // == 从当前节点的父节点一直向上遍历
   let node = sourceFiber;
   let parent = sourceFiber.return;
   while (parent !== null) {
     parent.childLanes = mergeLanes(parent.childLanes, lane);
     alternate = parent.alternate;
     if (alternate !== null) {
+      // == alternate.childLanes 与 lane 取 |
       alternate.childLanes = mergeLanes(alternate.childLanes, lane);
     } else {
       if (__DEV__) {
@@ -725,6 +763,7 @@ function markUpdateLaneFromFiberToRoot(
     node = parent;
     parent = parent.return;
   }
+  // == node 为 jsx 函数组件则返回根节点，否则返回 null
   if (node.tag === HostRoot) {
     const root: FiberRoot = node.stateNode;
     return root;
@@ -1029,18 +1068,25 @@ function finishConcurrentRender(root, exitStatus, lanes) {
   }
 }
 
+// == 在渲染阶段有新的更新: 标记当前 root 暂停更新
 function markRootSuspended(root, suspendedLanes) {
   // When suspending, we should always exclude lanes that were pinged or (more
   // rarely, since we try to avoid it) updated during the render phase.
   // TODO: Lol maybe there's a better way to factor this besides this
   // obnoxiously named function :)
+  // == 暂停时，我们应始终排除ping或（更多很少，因为我们尽量避免在渲染阶段进行更新。)
+  // == 待办事项：大声笑也许除此之外，还有更好的方法可以解决这个问题令人讨厌的命名函数:)
   suspendedLanes = removeLanes(suspendedLanes, workInProgressRootPingedLanes);
   suspendedLanes = removeLanes(suspendedLanes, workInProgressRootUpdatedLanes);
+  // == 标记根节点暂停
   markRootSuspended_dontCallThisOneDirectly(root, suspendedLanes);
 }
 
 // This is the entry point for synchronous tasks that don't go
 // through Scheduler
+// == 1. 首先, 创建一个新节点
+// == 2. 通过 reconcileChildren 函数来创建新的 Fiber 树
+// == 3. 最后, 搜索下一个工作单元: 首先子节点 -> 然后右兄弟节点 -> 最后父节点. 依此类推
 function performSyncWorkOnRoot(root) {
   invariant(
     (executionContext & (RenderContext | CommitContext)) === NoContext,
@@ -3043,7 +3089,9 @@ function jnd(timeElapsed: number) {
     : ceil(timeElapsed / 1960) * 1960;
 }
 
+// == 校验是否无限循环
 function checkForNestedUpdates() {
+  // == 防止无限循环渲染: 最大为 50
   if (nestedUpdateCount > NESTED_UPDATE_LIMIT) {
     nestedUpdateCount = 0;
     rootWithNestedUpdates = null;
@@ -3079,6 +3127,7 @@ function flushRenderPhaseStrictModeWarningsInDEV() {
   }
 }
 
+// == 开发环境: 尚未挂载的 Fiber 更新操作的警告
 let didWarnStateUpdateForNotYetMountedComponent: Set<string> | null = null;
 function warnAboutUpdateOnNotYetMountedFiberInDEV(fiber) {
   if (__DEV__) {
@@ -3103,11 +3152,13 @@ function warnAboutUpdateOnNotYetMountedFiberInDEV(fiber) {
       tag !== Block
     ) {
       // Only warn for user-defined components, not internal ones like Suspense.
+      // == 仅警告用户定义的组件，而不警告诸如 Suspense 之类的内部组件。
       return;
     }
 
     // We show the whole stack but dedupe on the top component's name because
     // the problematic code almost always lies inside that component.
+    // == 我们显示整个堆栈，但是在顶部组件的名称上重复数据删除，因为有问题的代码几乎总是位于该组件内部。
     const componentName = getComponentName(fiber.type) || 'ReactComponent';
     if (didWarnStateUpdateForNotYetMountedComponent !== null) {
       if (didWarnStateUpdateForNotYetMountedComponent.has(componentName)) {
@@ -3120,6 +3171,7 @@ function warnAboutUpdateOnNotYetMountedFiberInDEV(fiber) {
 
     const previousFiber = ReactCurrentFiberCurrent;
     try {
+      // == 设置当前 Fiber
       setCurrentDebugFiberInDEV(fiber);
       console.error(
         "Can't perform a React state update on a component that hasn't mounted yet. " +
@@ -3129,8 +3181,10 @@ function warnAboutUpdateOnNotYetMountedFiberInDEV(fiber) {
       );
     } finally {
       if (previousFiber) {
+        // == 设置当前 Fiber: previousFiber 存在
         setCurrentDebugFiberInDEV(fiber);
       } else {
+        // == 重置当前 Fiber: previousFiber 不存在
         resetCurrentDebugFiberInDEV();
       }
     }
@@ -3284,6 +3338,7 @@ if (__DEV__) {
   didWarnAboutUpdateInRenderForAnotherComponent = new Set();
 }
 
+// == 开发环境: 渲染阶段更新相关警告
 function warnAboutRenderPhaseUpdatesInDEV(fiber) {
   if (__DEV__) {
     if (
@@ -3292,6 +3347,7 @@ function warnAboutRenderPhaseUpdatesInDEV(fiber) {
       !getIsUpdatingOpaqueValueInRenderPhaseInDEV()
     ) {
       switch (fiber.tag) {
+        // == 函数组件、ForwardRef 组件、Memo 组件
         case FunctionComponent:
         case ForwardRef:
         case SimpleMemoComponent: {
@@ -3299,6 +3355,7 @@ function warnAboutRenderPhaseUpdatesInDEV(fiber) {
             (workInProgress && getComponentName(workInProgress.type)) ||
             'Unknown';
           // Dedupe by the rendering component because it's the one that needs to be fixed.
+          // == 通过渲染组件进行重复数据删除，因为它是需要修复的组件。
           const dedupeKey = renderingComponentName;
           if (!didWarnAboutUpdateInRenderForAnotherComponent.has(dedupeKey)) {
             didWarnAboutUpdateInRenderForAnotherComponent.add(dedupeKey);
@@ -3474,6 +3531,7 @@ export function warnIfUnmockedScheduler(fiber: Fiber) {
   }
 }
 
+// == 线程数
 function computeThreadID(root: FiberRoot, lane: Lane | Lanes) {
   // Interaction threads are unique per root and expiration time.
   // NOTE: Intentionally unsound cast. All that matters is that it's a number
@@ -3493,6 +3551,7 @@ export function markSpawnedWork(lane: Lane | Lanes) {
   }
 }
 
+// == 将当前交互与新调度的到期时间相关联
 function scheduleInteractions(
   root: FiberRoot,
   lane: Lane | Lanes,
@@ -3506,9 +3565,11 @@ function scheduleInteractions(
     const pendingInteractionMap = root.pendingInteractionMap;
     const pendingInteractions = pendingInteractionMap.get(lane);
     if (pendingInteractions != null) {
+      // == 统计异步更新的个数
       interactions.forEach(interaction => {
         if (!pendingInteractions.has(interaction)) {
           // Update the pending async work count for previously unscheduled interaction.
+          // == 为先前未计划的交互更新待处理的异步工作计数
           interaction.__count++;
         }
 
@@ -3518,6 +3579,7 @@ function scheduleInteractions(
       pendingInteractionMap.set(lane, new Set(interactions));
 
       // Update the pending async work count for the current interactions.
+      // == 更新当前交互的异步交互
       interactions.forEach(interaction => {
         interaction.__count++;
       });
@@ -3525,20 +3587,26 @@ function scheduleInteractions(
 
     const subscriber = __subscriberRef.current;
     if (subscriber !== null) {
+      // == 线程数
       const threadID = computeThreadID(root, lane);
       subscriber.onWorkScheduled(interactions, threadID);
     }
   }
 }
 
+// == 在根 root 上注册待处理的交互，以避免丢失跟踪的交互数据
 function schedulePendingInteractions(root: FiberRoot, lane: Lane | Lanes) {
   // This is called when work is scheduled on a root.
   // It associates the current interactions with the newly-scheduled expiration.
   // They will be restored when that expiration is later committed.
+  // == 在根 root 上调度时将调用此方法。
+  // == 它将当前交互与新调度的到期时间相关联。
+  // == 它们将在以后到期时恢复。
   if (!enableSchedulerTracing) {
     return;
   }
 
+  // == 将当前交互与新调度的到期时间相关联
   scheduleInteractions(root, lane, __interactionsRef.current);
 }
 

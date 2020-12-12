@@ -663,6 +663,7 @@ export function isSubsetOfLanes(set: Lanes, subset: Lanes | Lane) {
   return (set & subset) === subset;
 }
 
+// == a | b 只要有一个为 1 则为 1
 export function mergeLanes(a: Lanes | Lane, b: Lanes | Lane): Lanes {
   return a | b;
 }
@@ -696,6 +697,7 @@ export function createLaneMap<T>(initial: T): LaneMap<T> {
   return new Array(TotalLanes).fill(initial);
 }
 
+// == 标记根节点被更新过
 export function markRootUpdated(
   root: FiberRoot,
   updateLane: Lane,
@@ -712,8 +714,14 @@ export function markRootUpdated(
   // when considering updates across different priority levels, but isn't
   // sufficient for updates within the same priority, since we want to treat
   // those updates as parallel.
+  // == 待办事项：理论上，对任何 lane 的任何更新都可以解除对其他 lane 的阻塞。
+  // == 但尝试每种可能的组合都是不切实际的。我们需要启发式方法以决定哪个 lane 以及批次尝试渲染。
+  // == 现在，我们使用与旧的 ExpirationTimes 模型相同的启发式方法：
+  // == 重试具有相同或更低优先级的任何 lane，但不重试不包含更低优先级的更高优先级的更新。
+  // == 这很好在考虑不同优先级的更新，但不是足以在相同优先级内进行更新，因为我们要处理这些更新是并行的。
 
   // Unsuspend any update at equal or lower priority.
+  // == 以相同或更低的优先级取消任何更新。
   const higherPriorityLanes = updateLane - 1; // Turns 0b1000 into 0b0111
 
   root.suspendedLanes &= higherPriorityLanes;
@@ -723,9 +731,11 @@ export function markRootUpdated(
   const index = laneToIndex(updateLane);
   // We can always overwrite an existing timestamp because we prefer the most
   // recent event, and we assume time is monotonically increasing.
+  // == 我们总是可以覆盖现有时间戳，因为我们更倾向于最近发生的事件，我们认为时间在单调增加。
   eventTimes[index] = eventTime;
 }
 
+// == 标记根节点暂停
 export function markRootSuspended(root: FiberRoot, suspendedLanes: Lanes) {
   root.suspendedLanes |= suspendedLanes;
   root.pingedLanes &= ~suspendedLanes;

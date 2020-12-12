@@ -43,6 +43,7 @@ function getCurrentFiberStackInDev(): string {
   return '';
 }
 
+// == 重置当前 Fiber: previousFiber 不存在
 export function resetCurrentFiber() {
   if (__DEV__) {
     ReactDebugCurrentFrame.getCurrentStack = null;
@@ -51,6 +52,7 @@ export function resetCurrentFiber() {
   }
 }
 
+// == 设置当前 Fiber: previousFiber 存在
 export function setCurrentFiber(fiber: Fiber) {
   if (__DEV__) {
     ReactDebugCurrentFrame.getCurrentStack = getCurrentFiberStackInDev;
