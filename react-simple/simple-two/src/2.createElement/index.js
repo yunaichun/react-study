@@ -1,11 +1,11 @@
-// 由上一节可知 simpleCreateElement 本质:
+// 由上一节可知 createElementSimple 本质:
 // 1、参数: type、props、children 属性
 // 2、返回: js 对象 - { type, children: [{ type, ... }] }
 
 
-// == 实现自己的 simpleCreateElement 函数
+// == 实现自己的 createElementSimple 函数
 // == 1、通过延展符使得 children 在 props 中为数组
-export default function simpleCreateElement(type, props, ...children) {
+export default function createElementSimple(type, props, ...children) {
   return {
     type,
     props: {
@@ -38,11 +38,11 @@ const element = (
   </div>
 );
 // == 等价于
-// const element = simpleCreateElement(
+// const element = createElementSimple(
 //   "div",
 //   { id: "foo" },
-//   simpleCreateElement("a", null, "bar"),
-//   simpleCreateElement("b")
+//   createElementSimple("a", null, "bar"),
+//   createElementSimple("b")
 // );
 console.log(1111, element);
 // {

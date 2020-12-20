@@ -1,9 +1,12 @@
-import simpleCreateElement from '../2.createElement';
-// == 1. 要开始使用循环, 我们需要设置第一个工作单元, 然后编写一个 performUnitOfWork 函数, 该函数不仅执行当前工作单元, 同时返回下一个工作单元. 
+import createElementSimple from '../2.createElement';
+// == 1. 设置工作单元
+// == 要开始使用循环, 我们需要设置第一个工作单元, 然后编写一个 performUnitOfWork 函数, 该函数不仅执行当前工作单元, 同时返回下一个工作单元. 
 
-// == 2. 要组织工作单元, 我们需要一个数据结构: 一棵 Fiber 树. 我们将为每个元素分配一个 Fiber 节点, 并且每一个 Fiber 节点将成为一个工作单元. 
+// == 2. 组织工作单元
+// == 要组织工作单元, 我们需要一个数据结构: 一棵 Fiber 树. 我们将为每个元素分配一个 Fiber 节点, 并且每一个 Fiber 节点将成为一个工作单元. 
 
-// == 3. 假设我们要渲染一个像这样的元素树: 
+// == 3. 每个工作单元任务
+// == 假设我们要渲染一个像这样的元素树: 
 // render(
 //   <div>
 //     <h1>
@@ -14,35 +17,20 @@ import simpleCreateElement from '../2.createElement';
 //   </div>,
 //   container
 // )
-// 在渲染中, 我们将创建 root Fiber 节点并将其设置为 nextUnitOfWork . 剩下的工作将在 performUnitOfWork 函数上进行, 我们将为每个 Fiber 节点做三件事: 
+// 在渲染中, 我们将创建 root Fiber 节点并将其设置为 nextUnitOfWork . 剩下的工作将在 performUnitOfWork 函数上进行.
+// performUnitOfWork 中我们将为每个 Fiber 节点做三件事: 
 // A. 将元素添加到 DOM 
 // B. 为元素的子节点创建 Fiber 节点
 // C. 选择下一个工作单元
-// 该数据结构的目标之一是使查找下一个工作单元变得容易. 这就是为什么每个 Fiber 节点都链接到其第一个子节点, 下一个兄弟姐妹和父节点.
-
-// == 4. 工作流程
 // A. 如果 Fiber 节点没有子节点, 我们将右兄弟节点作为下一个工作单元. 例如, p 元素 Fiber 节点没有子节点, 因此我们将移至 a 元素的 Fiber 节点. 
 // B. 如果 Fiber 节点既没有子节点也没有右兄弟节点, 那么我们移至父节点. 例如, a 和 h2 元素的 Fiber 节点. 
 // C. 如果父节点没有右兄弟节点, 我们会不断向上检查, 直到找到有兄弟姐妹的父节点或者直到找到根节点. 如果到根节点, 则意味着我们已经完成了此渲染的所有工作. 
+// 
+// 该数据结构的目标之一是使查找下一个工作单元变得容易. 这就是为什么每个 Fiber 节点都链接到其第一个子节点, 下一个兄弟姐妹和父节点.
 
-// == 1. 我们将创建 DOM 节点的部分保留在其自身的功能中, 稍后将使用它
-function createDom(fiber) {
-  const dom =
-    fiber.type == 'TEXT_ELEMENT'
-      ? document.createTextNode('')
-      : document.createElement(fiber.type);
-  
-  const isProperty = key => key !== 'children';
-  Object.keys(fiber.props)
-    .filter(isProperty)
-    .forEach(name => {
-      dom[name] = fiber.props[name]
-    });
-  
-  return dom;
-}
 
-// == 2. 在渲染函数中, 将 nextUnitOfWork 设置为 Fiber 树的根节点
+// == 1. 设置工作单元
+// == 在渲染函数中, 将 nextUnitOfWork 设置为 Fiber 树的根节点
 let nextUnitOfWork = null;
 export default function render(element, container) {
   // == 当前工作单元: 根 Fiber 节点
@@ -54,7 +42,8 @@ export default function render(element, container) {
   };
 }
 
-// == 3. 然后, 当浏览器准备就绪时, 它将调用我们的 workLoop, 我们将开始在 Fiber 树的根节点上工作
+// == 2. 开始工作循环
+// == 然后, 当浏览器准备就绪时, 它将调用我们的 workLoop, 我们将开始在 Fiber 树的根节点上工作
 function workLoop(deadline) {
   let shouldYield = false;
   while (nextUnitOfWork && !shouldYield) {
@@ -70,6 +59,7 @@ function workLoop(deadline) {
 // == 浏览器将在主线程空闲时运行 workLoop 回调
 requestIdleCallback(workLoop);
 
+// == 3. 每个工作单元任务
 // == 作用: 不仅执行当前工作单元, 同时返回下一个工作单元
 function performUnitOfWork(fiber) {
   // add dom node
@@ -124,7 +114,24 @@ function performUnitOfWork(fiber) {
   }
 }
 
+// == 创建 DOM 节点
+function createDom(fiber) {
+  const dom =
+    fiber.type == 'TEXT_ELEMENT'
+      ? document.createTextNode('')
+      : document.createElement(fiber.type);
+  
+  const isProperty = key => key !== 'children';
+  Object.keys(fiber.props)
+    .filter(isProperty)
+    .forEach(name => {
+      dom[name] = fiber.props[name]
+    });
+  
+  return dom;
+}
 
+// == 4、开始render
 // == 调用我们自己创建的 createElement 和 render 方法
 const element = (
   <div id="foo">

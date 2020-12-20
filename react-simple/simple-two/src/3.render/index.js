@@ -1,6 +1,6 @@
-import simpleCreateElement from '../2.createElement';
+import createElementSimple from '../2.createElement';
 
-// == 根据 simpleCreateElement 创建的 js 对象创建元素；并渲染到 container 元素上
+// == 根据 createElementSimple 创建的 js 对象创建元素；并渲染到 container 元素上
 export default function render(element, container) {
   // == 1. 创建 元素节点 或者 文本节点
   const dom =
