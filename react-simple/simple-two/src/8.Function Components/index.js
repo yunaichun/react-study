@@ -1,41 +1,22 @@
 import createElementSimple from '../2.createElement';
 
-// == 1. 我们将创建 DOM 节点的部分保留在其自身的功能中, 稍后将使用它
-function createDom(fiber) {
-  const dom =
-    fiber.type == 'TEXT_ELEMENT'
-      ? document.createTextNode('')
-      : document.createElement(fiber.type);
-  
-  updateDom(dom, {}, fiber.props);
-
-  return dom;
-}
-
-// == 2. 在渲染函数中, 将 nextUnitOfWork 设置为 Fiber 树的根节点 [ performUnitOfWork 中返回下一个 Fiber 工作节点]
+// == 1. 设置工作单元
+// == 在渲染函数中, 将 nextUnitOfWork 设置为 Fiber 树的根节点
 let nextUnitOfWork = null;
-// == 备份 Fiber 树的根节点, 称其为进行中的 Fiber 节点: 每次处理一个元素时, 我们都会向页面 DOM 添加一个新节点。而且, 在完成渲染整个树之前, 浏览器可能会中断我们的工作。在这种情况下, 用户将看到不完整的 UI [ workLoop 中判断是否执行 commitRoot 提交到 DOM 阶段]
+// == 初始 render 备份 Fiber 树的根节点: 称其为进行中的 Fiber 节点
 let wipRoot = null;
-// == 我们需要将在 render 函数上收到的元素与我们提交给 DOM 的最后一个 Fiber 节点进行比较. 因此, 在完成提交之后，我们需要保存对"提交给 DOM 的 Fiber 树的根节点"的引用. 我们称它为 currentRoot [ reconcileChildren 调和阶段存储上一次提交 DOM 时的 Fiber 节点数据]
+// == 我们需要将在 render 函数上收到的元素与我们提交给 DOM 的最后一个 Fiber 节点进行比较. 因此, 在完成提交之后，我们需要保存对"提交给 DOM 的 Fiber 树的根节点"的引用. 我们称它为 currentRoot
 let currentRoot = null;
-// == 当我们将 Fiber 树提交给 DOM 时, 我们是从正在进行的根节点开始的, 它没有旧的 Fiber 树. 因此, 我们需要一个数组来跟踪要删除的节点 [ commitRoot 阶段单独执行 DOM 的删除操作]
+// == 当我们将 Fiber 树提交给 DOM 时, 我们是从正在进行的根节点开始的, 它没有旧的 Fiber 树. 因此, 我们需要一个数组来跟踪要删除的节点
 let deletions = null;
 export default function render(element, container) {
   // == 当前工作单元: 根 Fiber 节点
   wipRoot = {
-    // == 根节点没有此属性
-    // type: null,
     props: {
       // == element 为 createElement 创建的 js 对象
       children: [element],
     },
     dom: container,
-    // == 根节点没有此属性
-    // parent: null,
-    // == 还有一个 child 属性, 在 performUnitOfWork 阶段会被添加
-    child: null,
-    // == 还有一个 sibling 属性, 在 performUnitOfWork 阶段会被添加
-    sibling: null,
     // == 每个 Fiber 节点都有 alternate 属性: 该属性是旧 Fiber 节点的引用, 旧 Fiber 是我们在上一个提交阶段提交给 DOM 的 Fiber 节点[引用传递]
     alternate: currentRoot,
   };
@@ -44,6 +25,29 @@ export default function render(element, container) {
   // == 每次的 render 或者 rerender 都会初始化 nextUnitOfWork 为 Fiber 树的根节点
   nextUnitOfWork = wipRoot;
 }
+
+// == 2. 开始工作循环
+// == 然后, 当浏览器准备就绪时, 它将调用我们的 workLoop, 我们将开始在 Fiber 树的根节点上工作
+function workLoop(deadline) {
+  let shouldYield = false;
+  while (nextUnitOfWork && !shouldYield) {
+    nextUnitOfWork = performUnitOfWork(
+      nextUnitOfWork
+    );
+    // == deadline 有 2 个参数: timeRemaining() - 当前帧还剩下多少时间; didTimeout - 是否超时
+    shouldYield = deadline.timeRemaining() < 1;
+  }
+
+  // == 一旦完成所有工作（因为没有下一个工作单元，我们就知道了），我们便将整个 Fiber 树提交到 DOM 节点上
+  if (!nextUnitOfWork && wipRoot) {
+    commitRoot();
+  }
+
+  // == 在未来的帧中继续执行
+  requestIdleCallback(workLoop);
+}
+// == 浏览器将在主线程空闲时运行 workLoop 回调
+requestIdleCallback(workLoop);
 
 // == 一旦完成所有工作（因为没有下一个工作单元，我们就知道了），我们便将整个 Fiber 树提交给 DOM
 // == 我们在 commitRoot 函数中做到这一点。在这里，我们将所有节点递归附加到 dom
@@ -58,6 +62,7 @@ function commitRoot() {
   // == 添加到 DOM 节点之后将 Fiber 树销毁
   wipRoot = null;
 }
+
 function commitWork(fiber) {
   if (!fiber) {
     return;
@@ -99,6 +104,7 @@ function commitWork(fiber) {
   // == 3. 递归执行右兄弟节点
   commitWork(fiber.sibling);
 }
+
 function updateDom(dom, prevProps, nextProps) {
   const isEvent = key => key.startsWith('on');
   const isProperty = key =>
@@ -155,6 +161,7 @@ function updateDom(dom, prevProps, nextProps) {
       );
     });
 }
+
 function commitDeletion(fiber, domParent) {
   if (fiber.dom) {
     domParent.removeChild(fiber.dom);
@@ -163,28 +170,8 @@ function commitDeletion(fiber, domParent) {
     commitDeletion(fiber.child, domParent);
   }
 }
-// == 3. 然后, 当浏览器准备就绪时, 它将调用我们的 workLoop, 我们将开始在 Fiber 树的根节点上工作
-function workLoop(deadline) {
-  let shouldYield = false;
-  while (nextUnitOfWork && !shouldYield) {
-    nextUnitOfWork = performUnitOfWork(
-      nextUnitOfWork
-    );
-    // == deadline 有 2 个参数: timeRemaining() - 当前帧还剩下多少时间; didTimeout - 是否超时
-    shouldYield = deadline.timeRemaining() < 1;
-  }
 
-  // == 一旦完成所有工作（因为没有下一个工作单元，我们就知道了），我们便将整个 Fiber 树提交到 DOM 节点上
-  if (!nextUnitOfWork && wipRoot) {
-    commitRoot();
-  }
-
-  // == 在未来的帧中继续执行
-  requestIdleCallback(workLoop);
-}
-// == 浏览器将在主线程空闲时运行 workLoop 回调
-requestIdleCallback(workLoop);
-
+// == 3. 每个工作单元任务
 // == 作用: 不仅执行当前工作单元, 同时返回下一个工作单元
 function performUnitOfWork(fiber) {
   // add dom node
@@ -200,11 +187,6 @@ function performUnitOfWork(fiber) {
   } else {
     updateHostComponent(fiber);
   }
-
-  // == 每次处理一个元素时, 我们都会向页面 DOM 添加一个新节点。而且, 在完成渲染整个树之前, 浏览器可能会中断我们的工作。在这种情况下, 用户将看到不完整的 UI
-  // if (fiber.parent) {
-  //   fiber.parent.dom.appendChild(fiber.dom);
-  // }
 
   // == 2. 通过 reconcileChildren 函数来创建新的 Fiber 树
   // const elements = fiber.props.children
@@ -222,18 +204,32 @@ function performUnitOfWork(fiber) {
     nextFiber = nextFiber.parent;
   }
 }
+
 function updateFunctionComponent(fiber) {
   // == 执行此函数组件: fiber.type() -> createElement() -> js 对象【和 fiber.props.children 一致】
   // == 区别是函数组件没有 dom 等属性, 同时经过 createElement 解析之后 type 为 Function【实际是此函数组件本身】
   const children = [fiber.type(fiber.props)];
   reconcileChildren(fiber, children);
 }
+
 function updateHostComponent(fiber) {
   if (!fiber.dom) {
     fiber.dom = createDom(fiber);
   }
   reconcileChildren(fiber, fiber.props.children);
 }
+
+function createDom(fiber) {
+  const dom =
+    fiber.type == 'TEXT_ELEMENT'
+      ? document.createTextNode('')
+      : document.createElement(fiber.type);
+  
+  updateDom(dom, {}, fiber.props);
+
+  return dom;
+}
+
 // == 在这里，我们将旧 Fiber 树与新 Fiber 树进行协调. 同时遍历旧 Fiber 树的子级（wipFiber.alternate.child）和要调和的元素数组
 function reconcileChildren(wipFiber, elements) {
   let index = 0;
@@ -311,7 +307,7 @@ function reconcileChildren(wipFiber, elements) {
   }
 }
 
-
+// == 4、开始render
 // === 函数组件 === 
 function App(props) {
   return <h1>Hi {props.name}</h1>;
