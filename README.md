@@ -36,6 +36,13 @@
 
 #### react 简易实现相关
 
+- JSX的本质: https://www.answera.top/frontend/react/react-simple/jsx
+- createElement: https://www.answera.top/frontend/react/react-simple/createElement
+- render: https://www.answera.top/frontend/react/react-simple/render
+- Concurrent Mode: https://www.answera.top/frontend/react/react-simple/Concurrent
+- Fibers: https://www.answera.top/frontend/react/react-simple/Fibers
+- Render and Commit Phases: https://www.answera.top/frontend/react/react-simple/commit
+
 #### react 源码阅读相关
 
 ## 参考资料
