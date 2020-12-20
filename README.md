@@ -5,20 +5,20 @@
 ## 目录结构
 
 ```
-├── react-src                            react源码阅读（commit id 为 8b2d378 ）
+├── redux
+    ├── redux-src                         redux源码阅读
+    ├── redux-thunk-src                   redux-thunk源码阅读
+    ├── redux-promise-src                 redux-promise源码阅读
+    └── redux-simple                      redux及react-redux简易实现  
+├── react-simple
+    ├── simple-one                        react简易实现（参考winter课程）
+    └── simple-two                        react简易实现（参考build-your-own-react）
+└── react-src                             react源码阅读（commit id 为 8b2d378 ）
     ├── react
     ├── react-dom          
     ├── react-reconciler
     ├── scheduler
     └── shared
-├── react-simple
-    ├── simple-one                        react简易实现（参考winter课程）
-    └── simple-two                        react简易实现（参考build-your-own-react）          
-└── redux
-    ├── redux-src                         redux源码阅读
-    ├── redux-thunk-src                   redux-thunk源码阅读
-    ├── redux-promise-src                 redux-promise源码阅读
-    └── redux-simple                      redux及react-redux简易实现  
 ```
 
 ## 学习笔记
