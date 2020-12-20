@@ -42,6 +42,7 @@
 - Concurrent Mode: https://www.answera.top/frontend/react/react-simple/Concurrent
 - Fibers: https://www.answera.top/frontend/react/react-simple/Fibers
 - Render and Commit Phases: https://www.answera.top/frontend/react/react-simple/commit
+- Reconciliation: https://www.answera.top/frontend/react/react-simple/reconciliation
 
 #### react 源码阅读相关
 

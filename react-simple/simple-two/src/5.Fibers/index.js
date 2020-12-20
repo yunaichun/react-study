@@ -1,4 +1,10 @@
 import createElementSimple from '../2.createElement';
+
+// == 一、渲染拆分
+// == 根据上一节 Concurrent Mode 的介绍，
+// == 我们可以利用浏览器的 requestIdleCallback 方法将页面渲染拆分成一个个任务，
+// == 放在浏览器空闲的时候执行；具体思路如下。
+// == 二、逻辑梳理
 // == 1. 设置工作单元
 // == 要开始使用循环, 我们需要设置第一个工作单元, 然后编写一个 performUnitOfWork 函数, 该函数不仅执行当前工作单元, 同时返回下一个工作单元. 
 //

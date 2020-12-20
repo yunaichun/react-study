@@ -1,6 +1,6 @@
 import createElementSimple from '../2.createElement';
 
-// == 一、上一节存在缺陷
+// == 一、上一节存在问题
 // function performUnitOfWork() {
 //   if (fiber.parent) {
 //       fiber.parent.dom.appendChild(fiber.dom);
