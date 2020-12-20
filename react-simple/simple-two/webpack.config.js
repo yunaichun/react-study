@@ -70,8 +70,11 @@ module.exports = {
                         loader: 'babel-loader',
                         options: {
                             presets: ['@babel/preset-env'],
-                            // == 解析 jsx 语法的函数名称: 可以自定义 
-                            plugins: [['@babel/plugin-transform-react-jsx', {pragma: 'simpleCreateElement'}]]
+                            // == 解析 jsx 语法的函数名称自定义为 createElementSimple
+                            plugins: [[
+                                '@babel/plugin-transform-react-jsx', 
+                                {pragma: 'createElementSimple'}
+                            ]]
                         },
                     },
                 ]
