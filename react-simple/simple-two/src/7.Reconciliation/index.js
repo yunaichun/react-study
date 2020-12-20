@@ -1,4 +1,4 @@
-import createElemenDiy from '../2.createElement';
+import simpleCreateElement from '../2.createElement';
 
 // == 1. 我们将创建 DOM 节点的部分保留在其自身的功能中, 稍后将使用它
 function createDom(fiber) {

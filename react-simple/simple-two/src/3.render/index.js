@@ -1,4 +1,4 @@
-import createElemenDiy from '../2.createElement';
+import simpleCreateElement from '../2.createElement';
 
 // == 根据 createElemen 创建的 js 对象创建元素
 export default function render(element, container) {
