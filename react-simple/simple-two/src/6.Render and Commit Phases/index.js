@@ -1,68 +1,47 @@
 import createElementSimple from '../2.createElement';
 
-// == 1. 我们将创建 DOM 节点的部分保留在其自身的功能中, 稍后将使用它
-function createDom(fiber) {
-  const dom =
-    fiber.type == 'TEXT_ELEMENT'
-      ? document.createTextNode('')
-      : document.createElement(fiber.type);
-  
-  const isProperty = key => key !== 'children';
-  Object.keys(fiber.props)
-    .filter(isProperty)
-    .forEach(name => {
-      dom[name] = fiber.props[name]
-    });
-  
-  return dom;
-}
+// == 一、上一节存在缺陷
+// function performUnitOfWork() {
+//   if (fiber.parent) {
+//       fiber.parent.dom.appendChild(fiber.dom);
+//   }
+// }
+// 每次处理一个元素时, 我们都会向页面 DOM 添加一个新节点。
+// 而且, 在完成渲染整个树之前, 浏览器可能会中断我们的工作。
+// 在这种情况下, 用户将看到不完整的 UI。
+// == 二、解决思路
+// 1、不在 performUnitOfWork 每次断续执行 dom 的添加工作
+// 2、在所有 Fiber 节点串联成 Fiber 树之后再进行 dom 添加操作
+// == 三、解决方案
+// 1、初始 render 时候备份 Fiber 树的根节点: 称其为进行中的 Fiber 节点
+//
+// 2、workLoop 里执行创建 dom
+// A、初始化的时候 wipRoot 为 null，不会提交 commit
+// B、render 里面初始设置 nextUnitOfWork 之后 wipRoot 也已经有值了，但是此时 nextUnitOfWork 不为 null, 也不会提交 commit
+// C、当没有下一个工作单元的时候，即所有 Fiber 节点均已构建完成，此时会提交 commit
+// D、提交 commit 完成后 wipRoot 为 null，也不会再提交 commit 了，会等待下一次调用 render 的时候了
+//
+// 3、commitRoot 提交 dom
 
-// == 2. 在渲染函数中, 将 nextUnitOfWork 设置为 Fiber 树的根节点
+
+// == 1. 设置工作单元
+// == 在渲染函数中, 将 nextUnitOfWork 设置为 Fiber 树的根节点
 let nextUnitOfWork = null;
-// == 备份 Fiber 树的根节点, 称其为进行中的 Fiber 节点: 每次处理一个元素时, 我们都会向页面 DOM 添加一个新节点。而且, 在完成渲染整个树之前, 浏览器可能会中断我们的工作。在这种情况下, 用户将看到不完整的 UI
+// == 初始 render 备份 Fiber 树的根节点: 称其为进行中的 Fiber 节点
 let wipRoot = null;
 export default function render(element, container) {
   // == 当前工作单元: 根 Fiber 节点
   wipRoot = {
-    // == 根节点没有此属性
-    // type: null,
     props: {
-      // == element 为 createElement 创建的 js 对象
       children: [element],
     },
     dom: container,
-    // == 根节点没有此属性
-    // parent: null,
-    // == 还有一个 child 属性, 在 performUnitOfWork 阶段会被添加
-    child: null,
-    // == 还有一个 sibling 属性, 在 performUnitOfWork 阶段会被添加
-    sibling: null,
   };
   nextUnitOfWork = wipRoot;
 }
 
-// == 一旦完成所有工作（因为没有下一个工作单元，我们就知道了），我们便将整个 Fiber 树提交给 DOM
-// == 我们在 commitRoot 函数中做到这一点。在这里，我们将所有节点递归附加到 dom
-function commitRoot() {
-  // == wipRoot.child 代表 Fiber 树的第一个子节点
-  commitWork(wipRoot.child);
-  // == 添加到 DOM 节点之后将 Fiber 树销毁
-  wipRoot = null;
-}
-function commitWork(fiber) {
-  if (!fiber) {
-    return;
-  }
-  // == 1. 将子节点添加到 container
-  const domParent = fiber.parent.dom;
-  domParent.appendChild(fiber.dom);
-  // == 2. 递归执行子节点
-  commitWork(fiber.child);
-  // == 3. 递归执行右兄弟节点
-  commitWork(fiber.sibling);
-}
-
-// == 3. 然后, 当浏览器准备就绪时, 它将调用我们的 workLoop, 我们将开始在 Fiber 树的根节点上工作
+// == 2. 开始工作循环
+// == 然后, 当浏览器准备就绪时, 它将调用我们的 workLoop, 我们将开始在 Fiber 树的根节点上工作
 function workLoop(deadline) {
   let shouldYield = false;
   while (nextUnitOfWork && !shouldYield) {
@@ -84,6 +63,29 @@ function workLoop(deadline) {
 // == 浏览器将在主线程空闲时运行 workLoop 回调
 requestIdleCallback(workLoop);
 
+// == 一旦完成所有工作（因为没有下一个工作单元，我们就知道了），我们便将整个 Fiber 树提交给 DOM
+// == 我们在 commitRoot 函数中做到这一点。在这里，我们将所有节点递归附加到 dom
+function commitRoot() {
+  // == wipRoot.child 代表 Fiber 树的第一个子节点
+  commitWork(wipRoot.child);
+  // == 添加到 DOM 节点之后将 wipRoot 重置为空，为下一次更新初始化变量
+  wipRoot = null;
+}
+
+function commitWork(fiber) {
+  if (!fiber) {
+    return;
+  }
+  // == 1. 将子节点添加到 container
+  const domParent = fiber.parent.dom;
+  domParent.appendChild(fiber.dom);
+  // == 2. 递归执行子节点
+  commitWork(fiber.child);
+  // == 3. 递归执行右兄弟节点
+  commitWork(fiber.sibling);
+}
+
+// == 3. 每个工作单元任务
 // == 作用: 不仅执行当前工作单元, 同时返回下一个工作单元
 function performUnitOfWork(fiber) {
   // add dom node
@@ -94,7 +96,7 @@ function performUnitOfWork(fiber) {
   if (!fiber.dom) {
     fiber.dom = createDom(fiber);
   }
-  // == 每次处理一个元素时, 我们都会向页面 DOM 添加一个新节点。而且, 在完成渲染整个树之前, 浏览器可能会中断我们的工作。在这种情况下, 用户将看到不完整的 UI
+  // == 每次处理一个元素时, 我们都会向页面 DOM 添加一个新节点。而且, 在完成渲染整个树之前, 浏览器可能会中断我们的工作。在这种情况下, 用户将看到不完整的 UI。
   // if (fiber.parent) {
   //   fiber.parent.dom.appendChild(fiber.dom);
   // }
@@ -110,13 +112,8 @@ function performUnitOfWork(fiber) {
     const newFiber = {
       type: element.type,
       props: element.props,
-      // == 在下一个工作单元被创建
-      dom: null,
       parent: fiber,
-      // == 在下一个工作单元被添加
-      child: null,
-      // == 在下一个工作单元被添加
-      sibling: null,
+      dom: null,
     };
 
     // == 将其添加到 Fiber 树中, 将其设置为子节点还是同级节点, 具体取决于它是否是第一个子节点
@@ -143,7 +140,24 @@ function performUnitOfWork(fiber) {
   }
 }
 
+// == 创建 DOM 节点
+function createDom(fiber) {
+  const dom =
+    fiber.type == 'TEXT_ELEMENT'
+      ? document.createTextNode('')
+      : document.createElement(fiber.type);
+  
+  const isProperty = key => key !== 'children';
+  Object.keys(fiber.props)
+    .filter(isProperty)
+    .forEach(name => {
+      dom[name] = fiber.props[name]
+    });
+  
+  return dom;
+}
 
+// == 4、开始render
 // == 调用我们自己创建的 createElement 和 render 方法
 const element = (
   <div id="foo">
