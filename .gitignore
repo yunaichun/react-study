@@ -26,3 +26,6 @@ yarn-error.log*
 /react-simple/simple-one/dist
 /react-simple/simple-two/node_modules
 /react-simple/simple-two/dist
+
+/redux/redux-simple/node_modules
+/redux/redux-simple/dist

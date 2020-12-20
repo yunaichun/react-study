@@ -237,7 +237,7 @@ function updateFunctionComponent(fiber) {
   const children = [fiber.type(fiber.props)];
   reconcileChildren(fiber, children);
 }
-export default function useState(initial) {
+function useState(initial) {
   const oldHook =
     wipFiber.alternate &&
     wipFiber.alternate.hooks &&
