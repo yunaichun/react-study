@@ -6,14 +6,14 @@
 
 ```
 ├── redux
-    ├── redux-src                         redux源码阅读
-    ├── redux-thunk-src                   redux-thunk源码阅读
-    ├── redux-promise-src                 redux-promise源码阅读
-    └── redux-simple                      redux及react-redux简易实现  
+    ├── redux-src                         redux 源码阅读
+    ├── redux-thunk-src                   redux-thunk 源码阅读
+    ├── redux-promise-src                 redux-promise 源码阅读
+    └── redux-simple                      redux 及 react-redux 简易实现  
 ├── react-simple
-    ├── simple-one                        react简易实现（参考winter课程）
-    └── simple-two                        react简易实现（参考build-your-own-react）
-└── react-src                             react源码阅读（commit id 为 8b2d378 ）
+    ├── simple-one                        react 简易实现（参考winter课程）
+    └── simple-two                        react 简易实现（参考build-your-own-react）
+└── react-src                             react 源码阅读（commit id 为 8b2d378 ）
     ├── react
     ├── react-dom          
     ├── react-reconciler
