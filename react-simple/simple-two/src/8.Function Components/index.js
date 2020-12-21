@@ -9,8 +9,9 @@ import createElementSimple from '../2.createElement';
 // const container = document.getElementById('root');
 // render(element, container);
 // 2、函数组件 Fiber 节点的 type 属性是什么
-// 函数组件 Fiber 节点的 type 属性函数本身
-// 则执行此函数  Fiber 节点的 type 会返回当前函数组件的实际 Fiber 子节点树，如下
+// 2.1、函数组件 Fiber 节点的 type 属性函数本身
+// 2.2、则执行此函数即 fiber.type(fiber.props) 会返回当前函数组件的实际的节点树，
+// 2.3、如下
 // function App(props) {
 //   return <h1>Hi {props.name}</h1>;
 // }

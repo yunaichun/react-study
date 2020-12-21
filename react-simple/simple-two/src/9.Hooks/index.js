@@ -1,5 +1,27 @@
 import createElementSimple from '../2.createElement';
 
+// == 一、函数组件回顾
+// 1、函数组件 Fiber 节点的 type 属性函数本身
+// 2、则执行此函数即 fiber.type(fiber.props) 会返回当前函数组件的实际的节点树
+// 3、假如在函数组件内部执行 useState 函数，则当执行函数组件，即 fiber.type(fiber.props) 时，则 useState 也会被执行
+// == 二、useState 实现思路
+// 1、函数组件 Fiber 节点添加 hooks 属性
+// {
+//   type: Function,
+//   hooks: { 
+//     state,
+//     queue: [] 
+//   }
+// }
+// 2、执行函数组件的时候，便会执行 useState 函数
+// 第一步：主要是执行收集的 action，传入当前的 state
+// 第二步：最后返回新的 state，同时返回 setState 方法
+// 3、setState 方法
+// 第一步：将 setState 参数 action 方法收集起来
+// 第二步：立即重置工作单元 nextUnitOfWork 为根节点
+// 第三步：当工作单元到再次达此函数组件的时候，便会执行 useState 函数
+
+
 // == 1. 设置工作单元
 // == 在渲染函数中, 将 nextUnitOfWork 设置为 Fiber 树的根节点
 let nextUnitOfWork = null;
@@ -200,7 +222,7 @@ function performUnitOfWork(fiber) {
   }
 }
 
-// == 设置进行构建中的子 Fiber 节点
+// == 设置进行构建中的子 Fiber 节点：函数组件 Fiber 节点添加 hooks 属性
 let wipFiber = null;
 // == Fiber 树中添加 hooks 数组: 支持在同一组件中多次调用 useState , 并且我们跟踪当前 hook 索引
 let hookIndex = null;
@@ -216,12 +238,9 @@ function updateFunctionComponent(fiber) {
   reconcileChildren(fiber, children);
 }
 
-// == 当执行函数组件，即 fiber.type(fiber.props) 时候，初始化就会执行 useState 了
-// == 初始化执行 useState 之后，此函数组件的 Fiber 节点上就有了 hook 属性
-// == 在执行 setState 方法之后
-// == 1、将 setState 参数 action 方法收集起来
-// == 2、立即重置下一个工作单元 nextUnitOfWork
-// == 3、再次渲染到此函数组件的时候，就会执行 action，计算出新的 hook.state
+// == 执行函数组件的时候，便会执行 useState 函数
+// 第一步：主要是执行收集的 action，传入当前的 state
+// 第二步：最后返回新的 state，同时返回 setState 方法
 function useState(initial) {
   const oldHook =
     wipFiber.alternate &&
@@ -239,6 +258,9 @@ function useState(initial) {
     hook.state = action(hook.state);
   });
 
+  // 1、将 setState 参数 action 方法收集起来
+  // 2、立即重置工作单元 nextUnitOfWork 为根节点
+  // 3、当工作单元到再次达此函数组件的时候，便会执行 useState 函数
   const setState = action => {
     hook.queue.push(action);
     wipRoot = {
