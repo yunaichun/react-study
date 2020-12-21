@@ -207,18 +207,14 @@ function performUnitOfWork(fiber) {
   // return next unit of work
 
   // == 1. 首先, 我们创建一个新节点
-  // == 2. 通过 reconcileChildren 函数来创建新的 Fiber 树
   const isFunctionComponent =
-    fiber.type instanceof Function;
+  fiber.type instanceof Function;
+  // == 2. 通过 reconcileChildren 函数来创建新的 Fiber 树
   if (isFunctionComponent) {
     updateFunctionComponent(fiber);
   } else {
     updateHostComponent(fiber);
   }
-
-  // == 2. 通过 reconcileChildren 函数来创建新的 Fiber 树
-  // const elements = fiber.props.children
-  // reconcileChildren(fiber, elements)
 
   // == 3. 最后, 搜索下一个工作单元: 首先子节点 -> 然后右兄弟节点 -> 最后父节点. 依此类推
   if (fiber.child) {
@@ -244,6 +240,8 @@ function updateHostComponent(fiber) {
   if (!fiber.dom) {
     fiber.dom = createDom(fiber);
   }
+  // == 2. 通过 reconcileChildren 函数来创建新的 Fiber 树
+  // == 页面是重新渲染，且 dom 是修改或者不变，则用 alternate 属性备份当前 Fiber 节点
   reconcileChildren(fiber, fiber.props.children);
 }
 

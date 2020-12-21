@@ -158,7 +158,6 @@ function createDom(fiber) {
 }
 
 // == 4、开始render
-// == 调用我们自己创建的 createElement 和 render 方法
 const element = (
   <div id="foo">
     <a>bar</a>
