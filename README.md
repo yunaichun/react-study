@@ -49,8 +49,9 @@
 #### react 源码阅读相关
 
 - ReactDOM.render: https://www.answera.top/frontend/react/source-code/ReactDOM.render
-- listenToAllSupportedEvents: https://www.answera.top/frontend/react/source-code/listenToAllSupportedEvents
 - createContainer: https://www.answera.top/frontend/react/source-code/createContainer
+- listenToAllSupportedEvents: https://www.answera.top/frontend/react/source-code/listenToAllSupportedEvents
+- updateContainer: https://www.answera.top/frontend/react/source-code/updateContainer
 
 
 ## 参考资料
