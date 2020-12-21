@@ -1,5 +1,34 @@
 import createElementSimple from '../2.createElement';
 
+// == 一、函数组件的本质
+// 1、先看一个函数组件的渲染
+// function App(props) {
+//   return <h1>Hi {props.name}</h1>;
+// }
+// const element = <App name="foo" />;
+// const container = document.getElementById('root');
+// render(element, container);
+// 2、函数组件 Fiber 节点的 type 属性是什么
+// 函数组件 Fiber 节点的 type 属性函数本身
+// 则执行此函数  Fiber 节点的 type 会返回当前函数组件的实际 Fiber 子节点树，如下
+// function App(props) {
+//   return <h1>Hi {props.name}</h1>;
+// }
+// 等价于
+// function App(props) {
+//   return createElement(
+//     "h1",
+//     null,
+//     "Hi ",
+//     props.name
+//   )
+// }
+// == 二、解决思路
+// 1、在 performUnitOfWork 阶段如果遇到 fiber.type 为 function 的节点，执行 fiber.type 函数等到真实的 childern
+// 2、commitRoot 阶段添加元素：如果父级 fiber 节点没有 dom 属性，即为函数组件，则找父级节点的父级节点
+// 3、commitRoot 阶段删除元素：如果待移除的 fiber 节点没有 dom 属性，即为函数组件，则找待移除节点的子节点
+
+
 // == 1. 设置工作单元
 // == 在渲染函数中, 将 nextUnitOfWork 设置为 Fiber 树的根节点
 let nextUnitOfWork = null;
@@ -13,7 +42,6 @@ export default function render(element, container) {
   // == 当前工作单元: 根 Fiber 节点
   wipRoot = {
     props: {
-      // == element 为 createElement 创建的 js 对象
       children: [element],
     },
     dom: container,
@@ -258,10 +286,8 @@ function reconcileChildren(wipFiber, elements) {
       newFiber = {
         type: element.type,
         props: element.props,
-        dom: null,
         parent: wipFiber,
-        child: null,
-        sibling: null,
+        dom: null,
         // == 初始添加的时候 alternate 均为 null
         alternate: null,
         effectTag: 'PLACEMENT',
@@ -273,10 +299,8 @@ function reconcileChildren(wipFiber, elements) {
       newFiber = {
         type: oldFiber.type,
         props: element.props,
-        dom: oldFiber.dom,
         parent: wipFiber,
-        // child: null,
-        // sibling: null,
+        dom: oldFiber.dom,
         // == 更新的时候每个 Fiber 节点都保存上一次 Fiber 节点的数据: 先在 reconcileChildren 阶段将每个 Fiber 节点通过 alternate 属性存储上, 然后在 commitRoot 阶段对比后才去真正执行 DOM 操作
         alternate: oldFiber,
         // == 我们将在提交阶段使用此属性
@@ -308,22 +332,9 @@ function reconcileChildren(wipFiber, elements) {
 }
 
 // == 4、开始render
-// === 函数组件 === 
 function App(props) {
   return <h1>Hi {props.name}</h1>;
 }
 const element = <App name="foo" />;
-// === 以上等价 ===
-// function App(props) {
-//   return createElement(
-//     "h1",
-//     null,
-//     "Hi ",
-//     props.name
-//   )
-// };
-// const element = createElement(App, {
-//   name: "foo",
-// });
 const container = document.getElementById('root');
 render(element, container);

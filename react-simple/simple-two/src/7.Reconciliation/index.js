@@ -7,7 +7,7 @@ import createElementSimple from '../2.createElement';
 // == 1、commitRoot 不再是只添加节点，通过 Fiber 节点的 effectTag 标记是 增加、修改、删除元素
 // == 2、所以需要在 performUnitOfWork 阶段生成 Fiber 树的时候对每一个 Fiber 节点添加 effectTag 属性标记是增加、修改、删除
 // == 3、如何添加 effectTag 属性标记是增加、修改、删除节点呢？
-// == 第一步：我们通过 currentRoot 全局变量保存上一次渲染时的根 Fiber 节点，同时将其存入根 Fiber 节点的 alternate 属性上
+// == 第一步：我们通过 currentRoot 全局变量保存上一次渲染时的根 Fiber 节点，同时将其存入根 Fiber 节点的 alternate 属性上，在 commitRoot 阶段被存储上
 // == 第二步：在 performUnitOfWork 阶段将每个 Fiber 子节点 alternate 属性上均添加上当前 Fiber 节点数据备份
 // == 第三步：我们在更新阶段（下一次 render 被调用）再进入 performUnitOfWork 时候就可以比较了
 

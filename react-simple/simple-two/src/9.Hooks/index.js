@@ -12,19 +12,10 @@ let deletions = null;
 export default function render(element, container) {
   // == 当前工作单元: 根 Fiber 节点
   wipRoot = {
-    // == 根节点没有此属性
-    // type: null,
     props: {
-      // == element 为 createElement 创建的 js 对象
       children: [element],
     },
     dom: container,
-    // == 根节点没有此属性
-    // parent: null,
-    // == 还有一个 child 属性, 在 performUnitOfWork 阶段会被添加
-    child: null,
-    // == 还有一个 sibling 属性, 在 performUnitOfWork 阶段会被添加
-    sibling: null,
     // == 每个 Fiber 节点都有 alternate 属性: 该属性是旧 Fiber 节点的引用, 旧 Fiber 是我们在上一个提交阶段提交给 DOM 的 Fiber 节点[引用传递]
     alternate: currentRoot,
   };
@@ -213,7 +204,7 @@ function performUnitOfWork(fiber) {
   }
 }
 
-// == 设置进行构建中的 Fiber
+// == 设置进行构建中的子 Fiber 节点
 let wipFiber = null;
 // == Fiber 树中添加 hooks 数组: 支持在同一组件中多次调用 useState , 并且我们跟踪当前 hook 索引
 let hookIndex = null;
@@ -229,6 +220,12 @@ function updateFunctionComponent(fiber) {
   reconcileChildren(fiber, children);
 }
 
+// == 当执行函数组件，即 fiber.type(fiber.props) 时候，初始化就会执行 useState 了
+// == 初始化执行 useState 之后，此函数组件的 Fiber 节点上就有了 hook 属性
+// == 在执行 setState 方法之后
+// == 1、将 setState 参数 action 方法收集起来
+// == 2、立即重置下一个工作单元 nextUnitOfWork
+// == 3、再次渲染到此函数组件的时候，就会执行 action，计算出新的 hook.state
 function useState(initial) {
   const oldHook =
     wipFiber.alternate &&
@@ -241,15 +238,11 @@ function useState(initial) {
     queue: [],
   };
 
-  // == 在下一次工作单元的时候会执行所有的 actions : 传入旧的 state, 返回新的 state
   const actions = oldHook ? oldHook.queue : [];
   actions.forEach(action => {
     hook.state = action(hook.state);
   });
 
-  // == 1. hook 存入当前 action
-  // == 2. 将新的进行中的 currentRoot 设置为下一个工作单元, 以便工作循环可以开始新的渲染阶段.
-  // == 3. 在下一次工作单元的时候会执行所有的 actions
   const setState = action => {
     hook.queue.push(action);
     wipRoot = {
@@ -301,10 +294,8 @@ function reconcileChildren(wipFiber, elements) {
       newFiber = {
         type: element.type,
         props: element.props,
-        dom: null,
         parent: wipFiber,
-        child: null,
-        sibling: null,
+        dom: null,
         // == 初始添加的时候 alternate 均为 null
         alternate: null,
         effectTag: 'PLACEMENT',
@@ -318,8 +309,6 @@ function reconcileChildren(wipFiber, elements) {
         props: element.props,
         dom: oldFiber.dom,
         parent: wipFiber,
-        // child: null,
-        // sibling: null,
         // == 更新的时候每个 Fiber 节点都保存上一次 Fiber 节点的数据: 先在 reconcileChildren 阶段将每个 Fiber 节点通过 alternate 属性存储上, 然后在 commitRoot 阶段对比后才去真正执行 DOM 操作
         alternate: oldFiber,
         // == 我们将在提交阶段使用此属性
@@ -362,7 +351,6 @@ function createDom(fiber) {
 }
 
 // == 4、开始render
-// === hooks 函数组件 === 
 function Counter() {
   const [state, setState] = useState(1);
   return (
