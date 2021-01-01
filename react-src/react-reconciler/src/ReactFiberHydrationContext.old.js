@@ -474,6 +474,7 @@ function popHydrationState(fiber: Fiber): boolean {
   return true;
 }
 
+// == 重置 state
 function resetHydrationState(): void {
   if (!supportsHydration) {
     return;

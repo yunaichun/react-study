@@ -294,14 +294,22 @@ export function resolveLazyComponentTag(Component: Function): WorkTag {
 }
 
 // This is used to create an alternate fiber to do work on.
-export function createWorkInProgress(current: Fiber, pendingProps: any): Fiber {
+// == 创建新 Fiber 节点
+export function createWorkInProgress(
+  // == 旧 Fiber 第一个子节点
+  current: Fiber,
+  // == 新 Fiber 节点所有子节点
+  pendingProps: any
+): Fiber {
   let workInProgress = current.alternate;
+  // == 首次渲染
   if (workInProgress === null) {
     // We use a double buffering pooling technique because we know that we'll
     // only ever need at most two versions of a tree. We pool the "other" unused
     // node that we're free to reuse. This is lazily created to avoid allocating
     // extra objects for things that are never updated. It also allow us to
     // reclaim the extra memory if needed.
+    // == 创建 FiberNode 节点
     workInProgress = createFiber(
       current.tag,
       pendingProps,
@@ -322,7 +330,10 @@ export function createWorkInProgress(current: Fiber, pendingProps: any): Fiber {
 
     workInProgress.alternate = current;
     current.alternate = workInProgress;
-  } else {
+  }
+  // == 非首次渲染
+  else {
+    // == 存储新的 props
     workInProgress.pendingProps = pendingProps;
     // Needed because Blocks store data on type.
     workInProgress.type = current.type;
@@ -793,6 +804,7 @@ export function createFiberFromLegacyHidden(
   return fiber;
 }
 
+// == 创建文本节点
 export function createFiberFromText(
   content: string,
   mode: TypeOfMode,

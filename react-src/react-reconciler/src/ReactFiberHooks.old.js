@@ -340,11 +340,17 @@ function areHookInputsEqual(
 }
 
 export function renderWithHooks<Props, SecondArg>(
+  // == 旧 Fiber
   current: Fiber | null,
+  // == 新 Fiber
   workInProgress: Fiber,
+  // == 这个 type 实际是函数组件本身，执行就会返回函数组件 return 的内容
   Component: (p: Props, arg: SecondArg) => any,
+  // == 新的 props
   props: Props,
+  // == context
   secondArg: SecondArg,
+  // == 调度优先级
   nextRenderLanes: Lanes,
 ): any {
   renderLanes = nextRenderLanes;
@@ -392,15 +398,18 @@ export function renderWithHooks<Props, SecondArg>(
       ReactCurrentDispatcher.current = HooksDispatcherOnMountInDEV;
     }
   } else {
+    // == memoizedState 区分是 mount/update
     ReactCurrentDispatcher.current =
       current === null || current.memoizedState === null
         ? HooksDispatcherOnMount
         : HooksDispatcherOnUpdate;
   }
 
+  // == 调用函数组件本身，返回函数组件 return 的内容
   let children = Component(props, secondArg);
 
   // Check if there was a render phase update
+  // == 避免无限更新的循环陷阱
   if (didScheduleRenderPhaseUpdateDuringThisPass) {
     // Keep rendering in a loop for as long as render phase updates continue to
     // be scheduled. Use a counter to prevent infinite loops.
@@ -472,6 +481,7 @@ export function renderWithHooks<Props, SecondArg>(
       'early return statement.',
   );
 
+  // == 返回函数组件的 children 节点
   return children;
 }
 

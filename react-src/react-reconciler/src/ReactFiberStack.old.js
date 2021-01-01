@@ -21,6 +21,7 @@ if (__DEV__) {
 
 let index = -1;
 
+// == 创建 context
 function createCursor<T>(defaultValue: T): StackCursor<T> {
   return {
     current: defaultValue,
@@ -56,6 +57,7 @@ function pop<T>(cursor: StackCursor<T>, fiber: Fiber): void {
   index--;
 }
 
+// == 设置对象
 function push<T>(cursor: StackCursor<T>, value: T, fiber: Fiber): void {
   index++;
 

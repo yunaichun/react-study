@@ -1809,17 +1809,22 @@ function workLoopConcurrent() {
   }
 }
 
-// == 执行每个工作单元
+// == 执行每个工作单元: 参数是 workInProgress
 function performUnitOfWork(unitOfWork: Fiber): void {
   // The current, flushed, state of this fiber is the alternate. Ideally
   // nothing should rely on this, but relying on it here means that we don't
   // need an additional field on the work in progress.
+  // == 备份节点，上次节点数据
   const current = unitOfWork.alternate;
+  // == 设置当前 Fiber
   setCurrentDebugFiberInDEV(unitOfWork);
 
   let next;
   if (enableProfilerTimer && (unitOfWork.mode & ProfileMode) !== NoMode) {
     startProfilerTimer(unitOfWork);
+    // == 返回 workInProgress.child
+    // == 通过 current.child.sibling 处理了所有的子节点
+    // == 每个子节点的 return 属性均指向父节点 current
     next = beginWork(current, unitOfWork, subtreeRenderLanes);
     stopProfilerTimerIfRunningAndRecordDelta(unitOfWork, true);
   } else {
@@ -1830,8 +1835,10 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   unitOfWork.memoizedProps = unitOfWork.pendingProps;
   if (next === null) {
     // If this doesn't spawn new work, complete the current work.
+    // == 首次渲染
     completeUnitOfWork(unitOfWork);
   } else {
+    // == 更新
     workInProgress = next;
   }
 

@@ -230,30 +230,40 @@ if (__DEV__) {
   didWarnAboutDefaultPropsOnFunctionComponent = {};
 }
 
+// == 进入协调阶段
 export function reconcileChildren(
+  // == 旧 Fiber 节点
   current: Fiber | null,
+  // == 新 Fiber 节点
   workInProgress: Fiber,
+  // == 组件的子节点
   nextChildren: any,
+  // == 调度阶段
   renderLanes: Lanes,
 ) {
+  // == 首次渲染
   if (current === null) {
     // If this is a fresh new component that hasn't been rendered yet, we
     // won't update its child set by applying minimal side-effects. Instead,
     // we will add them all to the child before it gets rendered. That means
     // we can optimize this reconciliation pass by not tracking side-effects.
+    // == 处理所有子节点
     workInProgress.child = mountChildFibers(
       workInProgress,
       null,
       nextChildren,
       renderLanes,
     );
-  } else {
+  }
+  // == 更新阶段
+  else {
     // If the current child is the same as the work in progress, it means that
     // we haven't yet started any work on these children. Therefore, we use
     // the clone algorithm to create a copy of all the current children.
 
     // If we had any progressed work already, that is invalid at this point so
     // let's throw it out.
+    // == 处理所有子节点
     workInProgress.child = reconcileChildFibers(
       workInProgress,
       current.child,
@@ -698,11 +708,17 @@ function markRef(current: Fiber | null, workInProgress: Fiber) {
   }
 }
 
+// == 更新函数组件
 function updateFunctionComponent(
+  // == 旧 Fiber
   current,
+  // == 新 Fiber
   workInProgress,
+  // == 组件 type
   Component,
+  // == 新的 props
   nextProps: any,
+  // == 调度优先级
   renderLanes,
 ) {
   if (__DEV__) {
@@ -723,6 +739,7 @@ function updateFunctionComponent(
 
   let context;
   if (!disableLegacyContext) {
+    // == 返回 context
     const unmaskedContext = getUnmaskedContext(workInProgress, Component, true);
     context = getMaskedContext(workInProgress, unmaskedContext);
   }
@@ -760,6 +777,7 @@ function updateFunctionComponent(
     }
     setIsRendering(false);
   } else {
+    // == 返回函数组件的 children 节点
     nextChildren = renderWithHooks(
       current,
       workInProgress,
@@ -770,6 +788,7 @@ function updateFunctionComponent(
     );
   }
 
+  // == 更新阶段
   if (current !== null && !didReceiveUpdate) {
     bailoutHooks(current, workInProgress, renderLanes);
     return bailoutOnAlreadyFinishedWork(current, workInProgress, renderLanes);
@@ -1034,12 +1053,15 @@ function finishClassComponent(
   return workInProgress.child;
 }
 
+// == 根 FiberRootNode
 function pushHostRootContext(workInProgress) {
   const root = (workInProgress.stateNode: FiberRoot);
   if (root.pendingContext) {
+    // == 根 FiberRootNode 有 新的context
     pushTopLevelContextObject(
       workInProgress,
       root.pendingContext,
+      // == 新 context 与旧 context 是否相等
       root.pendingContext !== root.context,
     );
   } else if (root.context) {
@@ -2956,6 +2978,7 @@ export function markWorkInProgressReceivedUpdate() {
   didReceiveUpdate = true;
 }
 
+// == // == 已完成工作的救助
 function bailoutOnAlreadyFinishedWork(
   current: Fiber | null,
   workInProgress: Fiber,
@@ -3050,9 +3073,13 @@ function remountFiber(
   }
 }
 
+// == 根据传入的 Fiber 节点创建子 Fiber 节点，并将这两个 Fiber 节点连接起来
 function beginWork(
+  // == 当前组件对应的 Fiber 节点在上一次更新时的 Fiber 节点，即 workInProgress.alternate
   current: Fiber | null,
+  // == 当前组件对应的 Fiber 节点
   workInProgress: Fiber,
+  // == 优先级相关
   renderLanes: Lanes,
 ): Fiber | null {
   const updateLanes = workInProgress.lanes;
@@ -3075,11 +3102,15 @@ function beginWork(
     }
   }
 
+  // == 更新时
   if (current !== null) {
+    // == 旧的 props
     const oldProps = current.memoizedProps;
+    // == 新的 props 
     const newProps = workInProgress.pendingProps;
 
     if (
+      // == props/context 更改
       oldProps !== newProps ||
       hasLegacyContextChanged() ||
       // Force a re-render if the implementation changed due to hot reload:
@@ -3094,13 +3125,18 @@ function beginWork(
       // the begin phase. There's still some bookkeeping we that needs to be done
       // in this optimized path, mostly pushing stuff onto the stack.
       switch (workInProgress.tag) {
+        // == 即 FiberRootNode
         case HostRoot:
+          // == 设置对象
           pushHostRootContext(workInProgress);
+          // == 重置 state
           resetHydrationState();
           break;
+        // == jsx 组件
         case HostComponent:
           pushHostContext(workInProgress);
           break;
+        // == class 组件
         case ClassComponent: {
           const Component = workInProgress.type;
           if (isLegacyContextProvider(Component)) {
@@ -3108,17 +3144,20 @@ function beginWork(
           }
           break;
         }
+        // == HostPortal 组件
         case HostPortal:
           pushHostContainer(
             workInProgress,
             workInProgress.stateNode.containerInfo,
           );
           break;
+        // == ContextProvider 组件
         case ContextProvider: {
           const newValue = workInProgress.memoizedProps.value;
           pushProvider(workInProgress, newValue);
           break;
         }
+        // == Profiler 组件
         case Profiler:
           if (enableProfilerTimer) {
             // Profiler should only call onRender when one of its descendants actually rendered.
@@ -3137,6 +3176,7 @@ function beginWork(
             stateNode.passiveEffectDuration = 0;
           }
           break;
+        // == Suspense 组件
         case SuspenseComponent: {
           const state: SuspenseState | null = workInProgress.memoizedState;
           if (state !== null) {
@@ -3263,6 +3303,7 @@ function beginWork(
           return updateOffscreenComponent(current, workInProgress, renderLanes);
         }
       }
+      // == 已完成工作的救助
       return bailoutOnAlreadyFinishedWork(current, workInProgress, renderLanes);
     } else {
       if ((current.flags & ForceUpdateForLegacySuspense) !== NoFlags) {
@@ -3277,7 +3318,9 @@ function beginWork(
         didReceiveUpdate = false;
       }
     }
-  } else {
+  }
+  // == 首次渲染时
+  else {
     didReceiveUpdate = false;
   }
 
@@ -3288,6 +3331,7 @@ function beginWork(
   // move this assignment out of the common path and into each branch.
   workInProgress.lanes = NoLanes;
 
+  // == 首次渲时，根据 fiber.tag 不同，进入不同类型 Fiber 的创建
   switch (workInProgress.tag) {
     case IndeterminateComponent: {
       return mountIndeterminateComponent(
@@ -3307,7 +3351,9 @@ function beginWork(
         renderLanes,
       );
     }
+    // == 函数组件
     case FunctionComponent: {
+      // == 这个 type 实际是函数组件本身，执行就会返回函数组件 return 的内容
       const Component = workInProgress.type;
       const unresolvedProps = workInProgress.pendingProps;
       const resolvedProps =
@@ -3315,13 +3361,19 @@ function beginWork(
           ? unresolvedProps
           : resolveDefaultProps(Component, unresolvedProps);
       return updateFunctionComponent(
+        // == 旧 Fiber
         current,
+        // == 新 Fiber
         workInProgress,
+        // == 这个 type 实际是函数组件本身，执行就会返回函数组件 return 的内容
         Component,
+        // == 新的 props
         resolvedProps,
+        // == 调度优先级
         renderLanes,
       );
     }
+    // == class 组件
     case ClassComponent: {
       const Component = workInProgress.type;
       const unresolvedProps = workInProgress.pendingProps;
@@ -3337,16 +3389,21 @@ function beginWork(
         renderLanes,
       );
     }
+    // == 即 FiberRootNode
     case HostRoot:
       return updateHostRoot(current, workInProgress, renderLanes);
+    // == jsx 组件
     case HostComponent:
       return updateHostComponent(current, workInProgress, renderLanes);
     case HostText:
       return updateHostText(current, workInProgress);
+    // == Suspense 组件
     case SuspenseComponent:
       return updateSuspenseComponent(current, workInProgress, renderLanes);
+    // == portal 组件
     case HostPortal:
       return updatePortalComponent(current, workInProgress, renderLanes);
+    // == ForwardRef 组件
     case ForwardRef: {
       const type = workInProgress.type;
       const unresolvedProps = workInProgress.pendingProps;
@@ -3362,16 +3419,19 @@ function beginWork(
         renderLanes,
       );
     }
+    // == Fragment 组件
     case Fragment:
       return updateFragment(current, workInProgress, renderLanes);
     case Mode:
       return updateMode(current, workInProgress, renderLanes);
     case Profiler:
       return updateProfiler(current, workInProgress, renderLanes);
+    // == Provide.context 组件
     case ContextProvider:
       return updateContextProvider(current, workInProgress, renderLanes);
     case ContextConsumer:
       return updateContextConsumer(current, workInProgress, renderLanes);
+    // == memo 组件
     case MemoComponent: {
       const type = workInProgress.type;
       const unresolvedProps = workInProgress.pendingProps;

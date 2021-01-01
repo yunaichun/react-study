@@ -19,6 +19,7 @@ import {createCursor, push, pop} from './ReactFiberStack.old';
 declare class NoContextT {}
 const NO_CONTEXT: NoContextT = ({}: any);
 
+// == 创建 context
 const contextStackCursor: StackCursor<HostContext | NoContextT> = createCursor(
   NO_CONTEXT,
 );
@@ -74,10 +75,13 @@ function getHostContext(): HostContext {
   return context;
 }
 
+// == jsx 组件
 function pushHostContext(fiber: Fiber): void {
+  // == jsx 组件根 FiberRootNode
   const rootInstance: Container = requiredContext(
     rootInstanceStackCursor.current,
   );
+  
   const context: HostContext = requiredContext(contextStackCursor.current);
   const nextContext = getChildHostContext(context, fiber.type, rootInstance);
 

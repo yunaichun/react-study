@@ -42,6 +42,7 @@ const didPerformWorkStackCursor: StackCursor<boolean> = createCursor(false);
 // pushed the next context provider, and now need to merge their contexts.
 let previousContext: Object = emptyContextObject;
 
+// == 返回 context
 function getUnmaskedContext(
   workInProgress: Fiber,
   Component: Function,
@@ -61,6 +62,7 @@ function getUnmaskedContext(
   }
 }
 
+// == 缓存 context
 function cacheContext(
   workInProgress: Fiber,
   unmaskedContext: Object,
@@ -75,6 +77,7 @@ function cacheContext(
   }
 }
 
+// == 返回 context
 function getMaskedContext(
   workInProgress: Fiber,
   unmaskedContext: Object,
@@ -111,6 +114,7 @@ function getMaskedContext(
 
     // Cache unmasked context so we can avoid recreating masked context unless necessary.
     // Context is created before the class component is instantiated so check for instance.
+    // == 缓存 context
     if (instance) {
       cacheContext(workInProgress, unmaskedContext, context);
     }
@@ -156,9 +160,11 @@ function popTopLevelContextObject(fiber: Fiber): void {
   }
 }
 
+// == beginWork 中 对 HostRoot 的处理
 function pushTopLevelContextObject(
   fiber: Fiber,
   context: Object,
+  // == 新 context 与旧 context 是否相等
   didChange: boolean,
 ): void {
   if (disableLegacyContext) {
@@ -169,7 +175,7 @@ function pushTopLevelContextObject(
       'Unexpected context found on stack. ' +
         'This error is likely caused by a bug in React. Please file an issue.',
     );
-
+    // == 设置对象
     push(contextStackCursor, context, fiber);
     push(didPerformWorkStackCursor, didChange, fiber);
   }
@@ -225,10 +231,12 @@ function processChildContext(
   }
 }
 
+// == class 组件
 function pushContextProvider(workInProgress: Fiber): boolean {
   if (disableLegacyContext) {
     return false;
   } else {
+    // == 根 FiberRootNode
     const instance = workInProgress.stateNode;
     // We push the context as early as possible to ensure stack integrity.
     // If the instance does not exist yet, we will push null at first,
