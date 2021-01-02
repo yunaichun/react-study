@@ -666,9 +666,10 @@ function cutOffTailIfNeeded(
 
 // == 将所有子节点添加到 workInProgress 的 instance 上
 // == 遍历的顺序是: 深度优先
-// == 1、深度递归的最下面的 child
-// == 2、最底部的 child 的 sibling
-// == 3、向上到 parent
+// == 1、先从 workInProgress 深度递归的最底部的 child；
+// == 2、然后最底部的 child 的 sibling；
+// == 3、如果没有 sibling 向上到 parent，重复上面的操作；
+// == 4、直到 workInProgress。
 function completeWork(
   // == 上次渲染的 Fiber 节点
   current: Fiber | null,

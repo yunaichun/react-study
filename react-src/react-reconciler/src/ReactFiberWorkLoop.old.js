@@ -1823,7 +1823,7 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   if (enableProfilerTimer && (unitOfWork.mode & ProfileMode) !== NoMode) {
     startProfilerTimer(unitOfWork);
     // == 返回下一个工作单元：即第一个子节点 workInProgress.child
-    // == 遍历的顺序是: 广度优先
+    // == 遍历的顺序是: 自上而下的广度优先
     // == 1、通过 current.child.sibling 处理了所有的子节点
     // == 2、每个子节点的 return 属性均指向父节点 current
     next = beginWork(current, unitOfWork, subtreeRenderLanes);
@@ -1834,16 +1834,15 @@ function performUnitOfWork(unitOfWork: Fiber): void {
 
   resetCurrentDebugFiberInDEV();
   unitOfWork.memoizedProps = unitOfWork.pendingProps;
-  // == 当所有的节点都处理完成后
+  // == 当所有的节点都处理完成后，这时候 unitOfWork 为最后一层 Fiber 节点的第一个
   if (next === null) {
     // If this doesn't spawn new work, complete the current work.
     // == 传入的是 workInProgress，每个工作节点都会走 completeWork 逻辑
-    // == 遍历的顺序是: 链表指向
+    // == 遍历的顺序是: 自下而上的广度优先
     // == 1、下一个工作节点是 siblings
-    // == 2、如果没有 siblings，会到 parent
+    // == 2、如果没有 siblings，下一个工作节点是 parent
     completeUnitOfWork(unitOfWork);
   } else {
-    // == 更新
     workInProgress = next;
   }
 
@@ -1851,9 +1850,9 @@ function performUnitOfWork(unitOfWork: Fiber): void {
 }
 
 // == 传入的是 workInProgress，每个工作节点都会走 completeWork 逻辑
-// == 遍历的顺序是: 链表
+// == 遍历的顺序是: 自下而上的广度优先
 // == 1、下一个工作节点是 siblings
-// == 2、如果没有 siblings，会到 parent
+// == 2、如果没有 siblings，下一个工作节点是 parent
 function completeUnitOfWork(unitOfWork: Fiber): void {
   // Attempt to complete the current unit of work, then move to the next
   // sibling. If there are no more siblings, return to the parent fiber.
@@ -1877,9 +1876,10 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
       ) {
         // == 将所有子节点添加到 workInProgress 的 instance 上
         // == 遍历的顺序是: 深度优先
-        // == 1、深度递归的最下面的 child
-        // == 2、最底部的 child 的 sibling
-        // == 3、向上到 parent
+        // == 1、先从 workInProgress 深度递归的最底部的 child；
+        // == 2、然后最底部的 child 的 sibling；
+        // == 3、如果没有 sibling 向上到 parent，重复上面的操作；
+        // == 4、直到 workInProgress。
         next = completeWork(current, completedWork, subtreeRenderLanes);
       } else {
         startProfilerTimer(completedWork);
