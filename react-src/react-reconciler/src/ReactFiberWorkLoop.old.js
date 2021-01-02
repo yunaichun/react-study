@@ -1837,11 +1837,10 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   // == 当所有的节点都处理完成后
   if (next === null) {
     // If this doesn't spawn new work, complete the current work.
-    // == 将所有子节点添加到 workInProgress 的 instance 上
-    // == 遍历的顺序是: 深度优先
-    // == 1、深度递归的最下面的 child
-    // == 2、最底部的 child 的 sibling
-    // == 3、向上到 parent
+    // == 传入的是 workInProgress，每个工作节点都会走 completeWork 逻辑
+    // == 遍历的顺序是: 链表指向
+    // == 1、下一个工作节点是 siblings
+    // == 2、如果没有 siblings，会到 parent
     completeUnitOfWork(unitOfWork);
   } else {
     // == 更新
@@ -1851,9 +1850,10 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   ReactCurrentOwner.current = null;
 }
 
-// == 传入的是 workInProgress
-// == 下一个工作节点是 siblings
-// == 如果没有 siblings，会到 parent
+// == 传入的是 workInProgress，每个工作节点都会走 completeWork 逻辑
+// == 遍历的顺序是: 链表
+// == 1、下一个工作节点是 siblings
+// == 2、如果没有 siblings，会到 parent
 function completeUnitOfWork(unitOfWork: Fiber): void {
   // Attempt to complete the current unit of work, then move to the next
   // sibling. If there are no more siblings, return to the parent fiber.
@@ -1875,6 +1875,11 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
         !enableProfilerTimer ||
         (completedWork.mode & ProfileMode) === NoMode
       ) {
+        // == 将所有子节点添加到 workInProgress 的 instance 上
+        // == 遍历的顺序是: 深度优先
+        // == 1、深度递归的最下面的 child
+        // == 2、最底部的 child 的 sibling
+        // == 3、向上到 parent
         next = completeWork(current, completedWork, subtreeRenderLanes);
       } else {
         startProfilerTimer(completedWork);
@@ -1972,6 +1977,7 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
       }
     }
 
+    // == 到下一个兄弟节点
     const siblingFiber = completedWork.sibling;
     if (siblingFiber !== null) {
       // If there is more work to do in this returnFiber, do that next.
@@ -1979,6 +1985,7 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
       return;
     }
     // Otherwise, return to the parent
+    // == 到父节点
     completedWork = returnFiber;
     // Update the next thing we're working on in case something throws.
     workInProgress = completedWork;

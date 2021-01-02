@@ -665,7 +665,7 @@ function cutOffTailIfNeeded(
 }
 
 // == 将所有子节点添加到 workInProgress 的 instance 上
-// == 遍历的顺序是: 
+// == 遍历的顺序是: 深度优先
 // == 1、深度递归的最下面的 child
 // == 2、最底部的 child 的 sibling
 // == 3、向上到 parent
