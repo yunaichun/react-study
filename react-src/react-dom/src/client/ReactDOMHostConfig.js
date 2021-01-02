@@ -262,6 +262,7 @@ export function resetAfterCommit(containerInfo: Container): void {
   selectionInformation = null;
 }
 
+// == 根据 type 创建 dom 实例
 export function createInstance(
   type: string,
   props: Props,
@@ -289,17 +290,22 @@ export function createInstance(
   } else {
     parentNamespace = ((hostContext: any): HostContextProd);
   }
+  // == 根据 type 创建 dom 实例
   const domElement: Instance = createElement(
     type,
     props,
     rootContainerInstance,
     parentNamespace,
   );
+  // == dom 添加 __reactFiber$ 属性
   precacheFiberNode(internalInstanceHandle, domElement);
+  // ==dom 添加  __reactProps$ 属性
   updateFiberProps(domElement, props);
+  // == 返回创建的 domElement 实例
   return domElement;
 }
 
+// == 将 child 添加到 parentInstance
 export function appendInitialChild(
   parentInstance: Instance,
   child: Instance | TextInstance,
@@ -318,6 +324,7 @@ export function finalizeInitialChildren(
   return shouldAutoFocusHostComponent(type, props);
 }
 
+// == 得到更新后的 props
 export function prepareUpdate(
   domElement: Instance,
   type: string,

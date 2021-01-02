@@ -1823,8 +1823,9 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   if (enableProfilerTimer && (unitOfWork.mode & ProfileMode) !== NoMode) {
     startProfilerTimer(unitOfWork);
     // == 返回下一个工作单元：即第一个子节点 workInProgress.child
-    // == 通过 current.child.sibling 处理了所有的子节点
-    // == 每个子节点的 return 属性均指向父节点 current
+    // == 遍历的顺序是: 
+    // == 1、通过 current.child.sibling 处理了所有的子节点
+    // == 2、每个子节点的 return 属性均指向父节点 current
     next = beginWork(current, unitOfWork, subtreeRenderLanes);
     stopProfilerTimerIfRunningAndRecordDelta(unitOfWork, true);
   } else {
@@ -1835,7 +1836,11 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   unitOfWork.memoizedProps = unitOfWork.pendingProps;
   if (next === null) {
     // If this doesn't spawn new work, complete the current work.
-    // == 首次渲染
+    // == 将所有子节点添加到 workInProgress 的 instance 上
+    // == 遍历的顺序是: 
+    // == 1、深度递归的最下面的 child
+    // == 2、最底部的 child 的 sibling
+    // == 3、向上到 parent
     completeUnitOfWork(unitOfWork);
   } else {
     // == 更新
@@ -1845,6 +1850,9 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   ReactCurrentOwner.current = null;
 }
 
+// == 传入的是 workInProgress
+// == 下一个工作节点是 siblings
+// == 如果没有 siblings，会到 parent
 function completeUnitOfWork(unitOfWork: Fiber): void {
   // Attempt to complete the current unit of work, then move to the next
   // sibling. If there are no more siblings, return to the parent fiber.
@@ -1853,7 +1861,9 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
     // The current, flushed, state of this fiber is the alternate. Ideally
     // nothing should rely on this, but relying on it here means that we don't
     // need an additional field on the work in progress.
+    // == 上次渲染的 Fiber 节点
     const current = completedWork.alternate;
+    // == 当前节点的父节点
     const returnFiber = completedWork.return;
 
     // Check if the work completed or if something threw.

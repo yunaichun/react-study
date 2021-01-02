@@ -412,6 +412,7 @@ function skipPastDehydratedSuspenseInstance(
   return getNextHydratableInstanceAfterSuspenseInstance(suspenseInstance);
 }
 
+// == 找父节点
 function popToNextHostParent(fiber: Fiber): void {
   let parent = fiber.return;
   while (
@@ -459,6 +460,7 @@ function popHydrationState(fiber: Fiber): boolean {
     let nextInstance = nextHydratableInstance;
     while (nextInstance) {
       deleteHydratableInstance(fiber, nextInstance);
+      // == 找下一个兄弟节点
       nextInstance = getNextHydratableSibling(nextInstance);
     }
   }
@@ -467,6 +469,7 @@ function popHydrationState(fiber: Fiber): boolean {
   if (fiber.tag === SuspenseComponent) {
     nextHydratableInstance = skipPastDehydratedSuspenseInstance(fiber);
   } else {
+    // == 找下一个兄弟节点
     nextHydratableInstance = hydrationParentFiber
       ? getNextHydratableSibling(fiber.stateNode)
       : null;

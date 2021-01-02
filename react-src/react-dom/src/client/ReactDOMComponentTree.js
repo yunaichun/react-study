@@ -43,6 +43,7 @@ const internalEventHandlersKey = '__reactEvents$' + randomKey;
 const internalEventHandlerListenersKey = '__reactListeners$' + randomKey;
 const internalEventHandlesSetKey = '__reactHandles$' + randomKey;
 
+// == dom 添加 __reactFiber$ 属性
 export function precacheFiberNode(
   hostInst: Fiber,
   node: Instance | TextInstance | SuspenseInstance | ReactScopeInstance,
@@ -208,6 +209,7 @@ export function getFiberCurrentPropsFromNode(
   return (node: any)[internalPropsKey] || null;
 }
 
+// ==dom 添加  __reactProps$ 属性
 export function updateFiberProps(
   node: Instance | TextInstance | SuspenseInstance,
   props: Props,

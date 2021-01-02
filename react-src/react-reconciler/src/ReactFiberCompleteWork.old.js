@@ -137,12 +137,14 @@ import {resetChildFibers} from './ReactChildFiber.old';
 import {createScopeInstance} from './ReactFiberScope.old';
 import {transferActualDuration} from './ReactProfilerTimer.old';
 
+// == 标记更新
 function markUpdate(workInProgress: Fiber) {
   // Tag the fiber with an update effect. This turns a Placement into
   // a PlacementAndUpdate.
   workInProgress.flags |= Update;
 }
 
+// == 标记 Ref
 function markRef(workInProgress: Fiber) {
   workInProgress.flags |= Ref;
 }
@@ -155,37 +157,56 @@ if (supportsMutation) {
   // Mutation mode
 
   appendAllChildren = function(
+    // == 当前构建的 Fiber 的 instance
     parent: Instance,
+    // == 当前构建的 Fiber
     workInProgress: Fiber,
+    // == false
     needsVisibilityToggle: boolean,
+    // == false
     isHidden: boolean,
   ) {
     // We only have the top Fiber that was created but we need recurse down its
     // children to find all the terminal nodes.
+    // == 构建中的 Fiber 的第一个子节点
     let node = workInProgress.child;
     while (node !== null) {
+      // == HostComponent/HostText
       if (node.tag === HostComponent || node.tag === HostText) {
+        // == 将 node.stateNode 添加到 parent
         appendInitialChild(parent, node.stateNode);
-      } else if (enableFundamentalAPI && node.tag === FundamentalComponent) {
+      }
+      // == FundamentalComponent
+      else if (enableFundamentalAPI && node.tag === FundamentalComponent) {
         appendInitialChild(parent, node.stateNode.instance);
-      } else if (node.tag === HostPortal) {
+      }
+      // == HostPortal
+      else if (node.tag === HostPortal) {
         // If we have a portal child, then we don't want to traverse
         // down its children. Instead, we'll get insertions from each child in
         // the portal directly.
-      } else if (node.child !== null) {
+      }
+      // == 1、node.child不为空: 深度递归子节点
+      else if (node.child !== null) {
         node.child.return = node;
         node = node.child;
         continue;
       }
+
+      // == 4、回到父节点代表循环结束了
       if (node === workInProgress) {
         return;
       }
+
+      // == 3、没有兄弟节点的话到父节点
       while (node.sibling === null) {
         if (node.return === null || node.return === workInProgress) {
           return;
         }
         node = node.return;
       }
+
+      // == 2、开始循环到下一个兄弟节点
       node.sibling.return = node.return;
       node = node.sibling;
     }
@@ -219,6 +240,7 @@ if (supportsMutation) {
     // TODO: Experiencing an error where oldProps is null. Suggests a host
     // component is hitting the resume path. Figure out why. Possibly
     // related to `hidden`.
+    // == 得到更新后的 props
     const updatePayload = prepareUpdate(
       instance,
       type,
@@ -642,13 +664,22 @@ function cutOffTailIfNeeded(
   }
 }
 
+// == 将所有子节点添加到 workInProgress 的 instance 上
+// == 遍历的顺序是: 
+// == 1、深度递归的最下面的 child
+// == 2、最底部的 child 的 sibling
+// == 3、向上到 parent
 function completeWork(
+  // == 上次渲染的 Fiber 节点
   current: Fiber | null,
+  // == 当前构建的 Fiber 节点
   workInProgress: Fiber,
   renderLanes: Lanes,
 ): Fiber | null {
+  // == 新 props
   const newProps = workInProgress.pendingProps;
 
+  // == 根据不同的 tag，做处理 
   switch (workInProgress.tag) {
     case IndeterminateComponent:
     case LazyComponent:
@@ -698,8 +729,11 @@ function completeWork(
     }
     case HostComponent: {
       popHostContext(workInProgress);
+      // == 获取实例
       const rootContainerInstance = getRootHostContainer();
+      // == 当前构建中的树的 type
       const type = workInProgress.type;
+      // == 更新节点
       if (current !== null && workInProgress.stateNode != null) {
         updateHostComponent(
           current,
@@ -712,7 +746,9 @@ function completeWork(
         if (current.ref !== workInProgress.ref) {
           markRef(workInProgress);
         }
-      } else {
+      }
+      // == 初始渲染
+      else {
         if (!newProps) {
           invariant(
             workInProgress.stateNode !== null,
@@ -744,6 +780,7 @@ function completeWork(
             markUpdate(workInProgress);
           }
         } else {
+          // == 根据 type 创建 dom 实例
           const instance = createInstance(
             type,
             newProps,
@@ -752,6 +789,7 @@ function completeWork(
             workInProgress,
           );
 
+          // == 将子孙节点添加到 instance 中
           appendAllChildren(instance, workInProgress, false, false);
 
           workInProgress.stateNode = instance;
@@ -768,12 +806,14 @@ function completeWork(
               currentHostContext,
             )
           ) {
+            // == 标记更新
             markUpdate(workInProgress);
           }
         }
 
         if (workInProgress.ref !== null) {
           // If there is a ref on a host node we need to schedule a callback
+          // == 标记 Ref
           markRef(workInProgress);
         }
       }

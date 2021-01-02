@@ -403,6 +403,7 @@ function updateDOMProperties(
   }
 }
 
+// == 根据 type 创建 dom 实例
 export function createElement(
   type: string,
   props: Object,
@@ -436,6 +437,7 @@ export function createElement(
       }
     }
 
+    // == script 标签
     if (type === 'script') {
       // Create the script via .innerHTML so its "parser-inserted" flag is
       // set to true and it does not execute
@@ -455,10 +457,14 @@ export function createElement(
       // This is guaranteed to yield a script element.
       const firstChild = ((div.firstChild: any): HTMLScriptElement);
       domElement = div.removeChild(firstChild);
-    } else if (typeof props.is === 'string') {
+    }
+    // == is 
+    else if (typeof props.is === 'string') {
       // $FlowIssue `createElement` should be updated for Web Components
       domElement = ownerDocument.createElement(type, {is: props.is});
-    } else {
+    }
+    // == 创建 dom 元素
+    else {
       // Separate else branch instead of using `props.is || undefined` above because of a Firefox bug.
       // See discussion in https://github.com/facebook/react/pull/6896
       // and discussion in https://bugzilla.mozilla.org/show_bug.cgi?id=1276240
@@ -471,6 +477,7 @@ export function createElement(
       // - a bug where the `select` set the first item as selected despite the `size` attribute #14239
       // See https://github.com/facebook/react/issues/13222
       // and https://github.com/facebook/react/issues/14239
+      // == 选择
       if (type === 'select') {
         const node = ((domElement: any): HTMLSelectElement);
         if (props.multiple) {
@@ -507,6 +514,7 @@ export function createElement(
     }
   }
 
+  // == 返回创建的 dom 元素
   return domElement;
 }
 
@@ -659,6 +667,7 @@ export function setInitialProperties(
 }
 
 // Calculate the diff between the two objects.
+// == 得到更新后的 props
 export function diffProperties(
   domElement: Element,
   tag: string,
