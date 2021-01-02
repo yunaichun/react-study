@@ -1823,7 +1823,7 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   if (enableProfilerTimer && (unitOfWork.mode & ProfileMode) !== NoMode) {
     startProfilerTimer(unitOfWork);
     // == 返回下一个工作单元：即第一个子节点 workInProgress.child
-    // == 遍历的顺序是: 
+    // == 遍历的顺序是: 广度优先
     // == 1、通过 current.child.sibling 处理了所有的子节点
     // == 2、每个子节点的 return 属性均指向父节点 current
     next = beginWork(current, unitOfWork, subtreeRenderLanes);
@@ -1834,10 +1834,11 @@ function performUnitOfWork(unitOfWork: Fiber): void {
 
   resetCurrentDebugFiberInDEV();
   unitOfWork.memoizedProps = unitOfWork.pendingProps;
+  // == 当所有的节点都处理完成后
   if (next === null) {
     // If this doesn't spawn new work, complete the current work.
     // == 将所有子节点添加到 workInProgress 的 instance 上
-    // == 遍历的顺序是: 
+    // == 遍历的顺序是: 深度优先
     // == 1、深度递归的最下面的 child
     // == 2、最底部的 child 的 sibling
     // == 3、向上到 parent
