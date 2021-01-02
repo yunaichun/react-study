@@ -570,6 +570,7 @@ function adoptClassInstance(workInProgress: Fiber, instance: any): void {
   }
 }
 
+// == 返回实例 class 组件
 function constructClassInstance(
   workInProgress: Fiber,
   ctor: any,
@@ -649,6 +650,7 @@ function constructClassInstance(
     }
   }
 
+  // == 实例 class 组件
   const instance = new ctor(props, context);
   const state = (workInProgress.memoizedState =
     instance.state !== null && instance.state !== undefined
@@ -819,6 +821,7 @@ function mountClassInstance(
   instance.state = workInProgress.memoizedState;
   instance.refs = emptyRefsObject;
 
+  // == 初始化更新队列: FiberNode
   initializeUpdateQueue(workInProgress);
 
   const contextType = ctor.contextType;

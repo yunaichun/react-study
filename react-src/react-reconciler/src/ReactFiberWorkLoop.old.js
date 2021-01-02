@@ -1822,7 +1822,7 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   let next;
   if (enableProfilerTimer && (unitOfWork.mode & ProfileMode) !== NoMode) {
     startProfilerTimer(unitOfWork);
-    // == 返回 workInProgress.child
+    // == 返回下一个工作单元：即第一个子节点 workInProgress.child
     // == 通过 current.child.sibling 处理了所有的子节点
     // == 每个子节点的 return 属性均指向父节点 current
     next = beginWork(current, unitOfWork, subtreeRenderLanes);

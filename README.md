@@ -52,7 +52,9 @@
 - createContainer: https://www.answera.top/frontend/react/source-code/createContainer
 - listenToAllSupportedEvents: https://www.answera.top/frontend/react/source-code/listenToAllSupportedEvents
 - updateContainer: https://www.answera.top/frontend/react/source-code/updateContainer
-
+- beginWork: https://www.answera.top/frontend/react/source-code/beginWork
+- completeUnitOfWork: https://www.answera.top/frontend/react/source-code/completeUnitOfWork
+- commitRoot: https://www.answera.top/frontend/react/source-code/commitRoot
 
 ## 参考资料
 

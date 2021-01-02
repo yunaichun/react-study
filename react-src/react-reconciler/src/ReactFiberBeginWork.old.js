@@ -906,6 +906,7 @@ function updateClassComponent(
 
   const instance = workInProgress.stateNode;
   let shouldUpdate;
+  // == 不存在实例，直接创建
   if (instance === null) {
     if (current !== null) {
       // A class component without an instance only mounts if it suspended
@@ -918,10 +919,13 @@ function updateClassComponent(
       workInProgress.flags |= Placement;
     }
     // In the initial pass we might need to construct the instance.
+    // == 返回实例 class 组件
     constructClassInstance(workInProgress, Component, nextProps);
     mountClassInstance(workInProgress, Component, nextProps, renderLanes);
     shouldUpdate = true;
-  } else if (current === null) {
+  }
+  // == 存在实例，可以复用
+  else if (current === null) {
     // In a resume, we'll already have an instance we can reuse.
     shouldUpdate = resumeMountClassInstance(
       workInProgress,
@@ -929,7 +933,9 @@ function updateClassComponent(
       nextProps,
       renderLanes,
     );
-  } else {
+  }
+  // == 更新实例
+  else {
     shouldUpdate = updateClassInstance(
       current,
       workInProgress,
@@ -938,6 +944,7 @@ function updateClassComponent(
       renderLanes,
     );
   }
+  // == 返回下一个工作单元
   const nextUnitOfWork = finishClassComponent(
     current,
     workInProgress,
@@ -3073,7 +3080,9 @@ function remountFiber(
   }
 }
 
-// == 根据传入的 Fiber 节点创建子 Fiber 节点，并将这两个 Fiber 节点连接起来
+// == 返回下一个工作单元：即第一个子节点 workInProgress.child
+// == 通过 current.child.sibling 处理了所有的子节点
+// == 每个子节点的 return 属性均指向父节点 current
 function beginWork(
   // == 当前组件对应的 Fiber 节点在上一次更新时的 Fiber 节点，即 workInProgress.alternate
   current: Fiber | null,
