@@ -2423,7 +2423,7 @@ function commitRootImpl(root, renderPriorityLevel) {
   } else {
     nestedUpdateCount = 0;
   }
-
+  
   onCommitRootDevTools(finishedWork.stateNode, renderPriorityLevel);
 
   if (__DEV__) {
@@ -2460,6 +2460,9 @@ function commitRootImpl(root, renderPriorityLevel) {
   }
 
   // If layout work was scheduled, flush it now.
+  // == 执行同步任务，这样同步任务不需要等到下次事件循环再执行
+  // == 比如在 componentDidMount 中执行 setState 创建的更新会在这里被同步执行
+  // == 或 useLayoutEffect
   flushSyncCallbackQueue();
 
   if (__DEV__) {
