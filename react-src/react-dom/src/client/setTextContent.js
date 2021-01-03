@@ -18,6 +18,7 @@ import {TEXT_NODE} from '../shared/HTMLNodeType';
  * @param {string} text
  * @internal
  */
+// == 根据 ContentReset effectTag 重置文字节点
 const setTextContent = function(node: Element, text: string): void {
   if (text) {
     const firstChild = node.firstChild;

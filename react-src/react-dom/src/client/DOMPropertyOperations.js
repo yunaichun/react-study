@@ -133,6 +133,7 @@ export function getValueForAttribute(
  * @param {string} name
  * @param {*} value
  */
+// == 处理剩余 props
 export function setValueForProperty(
   node: Element,
   name: string,

@@ -222,6 +222,12 @@ function safelyCallDestroy(
   }
 }
 
+// == 调用getSnapshotBeforeUpdate生命周期钩子。
+// == Stack Reconciler 重构为 Fiber Reconciler 后，
+// == render 阶段的任务可能中断/重新开始，
+// == 对应的组件在 render 阶段的生命周期钩子（即componentWillXXX）可能触发多次。
+// == getSnapshotBeforeUpdate 是在 commit 阶段内的 before mutation 阶段调用的，
+// == 由于 commit 阶段是同步的，所以不会遇到多次调用的问题。
 function commitBeforeMutationLifeCycles(
   current: Fiber | null,
   finishedWork: Fiber,
@@ -269,6 +275,7 @@ function commitBeforeMutationLifeCycles(
               }
             }
           }
+          // == 调用 getSnapshotBeforeUpdate 方法
           const snapshot = instance.getSnapshotBeforeUpdate(
             finishedWork.elementType === finishedWork.type
               ? prevProps
@@ -286,6 +293,7 @@ function commitBeforeMutationLifeCycles(
               );
             }
           }
+          // == 在实例的 __reactInternalSnapshotBeforeUpdate 属性上挂载 snapshot
           instance.__reactInternalSnapshotBeforeUpdate = snapshot;
         }
       }
@@ -314,6 +322,7 @@ function commitBeforeMutationLifeCycles(
   );
 }
 
+// == 执行所有 useLayoutEffect hook的销毁函数 
 function commitHookEffectListUnmount(tag: number, finishedWork: Fiber) {
   const updateQueue: FunctionComponentUpdateQueue | null = (finishedWork.updateQueue: any);
   const lastEffect = updateQueue !== null ? updateQueue.lastEffect : null;
@@ -482,6 +491,7 @@ function commitLifeCycles(
       ) {
         try {
           startLayoutEffectTimer();
+          // == 调用 hooks 相关函数
           commitHookEffectListMount(HookLayout | HookHasEffect, finishedWork);
         } finally {
           recordLayoutEffectDuration(finishedWork);
@@ -534,6 +544,7 @@ function commitLifeCycles(
           ) {
             try {
               startLayoutEffectTimer();
+              // == 调用 componentDidMount 生命周期
               instance.componentDidMount();
             } finally {
               recordLayoutEffectDuration(finishedWork);
@@ -824,10 +835,12 @@ function hideOrUnhideAllChildren(finishedWork, isHidden) {
   }
 }
 
+// == 更新 ref
 function commitAttachRef(finishedWork: Fiber) {
   const ref = finishedWork.ref;
   if (ref !== null) {
     const instance = finishedWork.stateNode;
+    // == 获取 DOM 实例
     let instanceToUse;
     switch (finishedWork.tag) {
       case HostComponent:
@@ -841,6 +854,7 @@ function commitAttachRef(finishedWork: Fiber) {
       instanceToUse = instance;
     }
     if (typeof ref === 'function') {
+      // == 如果 ref 是函数形式，调用回调函数
       ref(instanceToUse);
     } else {
       if (__DEV__) {
@@ -852,12 +866,13 @@ function commitAttachRef(finishedWork: Fiber) {
           );
         }
       }
-
+      // == 如果 ref 是 ref 实例形式，赋值 ref.current
       ref.current = instanceToUse;
     }
   }
 }
 
+// == 更新 ref
 function commitDetachRef(current: Fiber) {
   const currentRef = current.ref;
   if (currentRef !== null) {
@@ -1170,12 +1185,14 @@ function getHostSibling(fiber: Fiber): ?Instance {
   }
 }
 
+// == 插入 DOM
 function commitPlacement(finishedWork: Fiber): void {
   if (!supportsMutation) {
     return;
   }
 
   // Recursively insert all host nodes into the parent.
+  // == 1、获取父级 DOM 节点。其中 finishedWork 为传入的 Fiber 节点。
   const parentFiber = getHostParentFiber(finishedWork);
 
   // Note: these two variables *must* always be updated together.
@@ -1187,10 +1204,12 @@ function commitPlacement(finishedWork: Fiber): void {
       parent = parentStateNode;
       isContainer = false;
       break;
+    // == HostRoot 为 rootFiber
     case HostRoot:
       parent = parentStateNode.containerInfo;
       isContainer = true;
       break;
+    // == HostPortal 为 rootFiber
     case HostPortal:
       parent = parentStateNode.containerInfo;
       isContainer = true;
@@ -1215,9 +1234,12 @@ function commitPlacement(finishedWork: Fiber): void {
     parentFiber.flags &= ~ContentReset;
   }
 
+  // == 2、获取 Fiber 节点的 DOM 兄弟节点
   const before = getHostSibling(finishedWork);
   // We only have the top Fiber that was inserted but we need to recurse down its
   // children to find all the terminal nodes.
+  // == 3、根据 DOM 兄弟节点是否存在决定调用 parentNode.insertBefore 或 parentNode.appendChild 执行 DOM 插入操作。
+  // == parentStateNode 是否是 rootFiber
   if (isContainer) {
     insertOrAppendPlacementNodeIntoContainer(finishedWork, before, parent);
   } else {
@@ -1234,9 +1256,12 @@ function insertOrAppendPlacementNodeIntoContainer(
   const isHost = tag === HostComponent || tag === HostText;
   if (isHost || (enableFundamentalAPI && tag === FundamentalComponent)) {
     const stateNode = isHost ? node.stateNode : node.stateNode.instance;
+    // == 有兄弟节点执行 insertBefore
     if (before) {
       insertInContainerBefore(parent, stateNode, before);
-    } else {
+    }
+    // == 没有兄弟节点执行 appendChild
+    else {
       appendChildToContainer(parent, stateNode);
     }
   } else if (tag === HostPortal) {
@@ -1265,9 +1290,12 @@ function insertOrAppendPlacementNode(
   const isHost = tag === HostComponent || tag === HostText;
   if (isHost || (enableFundamentalAPI && tag === FundamentalComponent)) {
     const stateNode = isHost ? node.stateNode : node.stateNode.instance;
+    // == 有兄弟节点执行 insertBefore
     if (before) {
       insertBefore(parent, stateNode, before);
-    } else {
+    }
+    // == 没有兄弟节点执行 appendChild
+    else {
       appendChild(parent, stateNode);
     }
   } else if (tag === HostPortal) {
@@ -1340,6 +1368,7 @@ function unmountHostComponents(
     }
 
     if (node.tag === HostComponent || node.tag === HostText) {
+      // == 调用 Unmounts 方法
       commitNestedUnmounts(
         finishedRoot,
         node,
@@ -1348,6 +1377,7 @@ function unmountHostComponents(
       );
       // After all the children have unmounted, it is now safe to remove the
       // node from the tree.
+      // == 调用 removeChild 方法
       if (currentParentIsContainer) {
         removeChildFromContainer(
           ((currentParent: any): Container),
@@ -1451,12 +1481,16 @@ function unmountHostComponents(
   }
 }
 
+// == 删除 DOM
 function commitDeletion(
   finishedRoot: FiberRoot,
   current: Fiber,
   nearestMountedAncestor: Fiber | null,
   renderPriorityLevel: ReactPriorityLevel,
 ): void {
+  // == 1、递归调用Fiber节点及其子孙Fiber节点中fiber.tag为ClassComponent的componentWillUnmount (opens new window)生命周期钩子，从页面移除Fiber节点对应DOM节点
+  // == 2、解绑ref
+  // == 3、调度useEffect的销毁函数
   if (supportsMutation) {
     // Recursively delete all host nodes from the parent.
     // Detach refs and call componentWillUnmount() on the whole subtree.
@@ -1482,6 +1516,7 @@ function commitDeletion(
   }
 }
 
+// == 更新 DOM
 function commitWork(current: Fiber | null, finishedWork: Fiber): void {
   if (!supportsMutation) {
     switch (finishedWork.tag) {
@@ -1565,6 +1600,7 @@ function commitWork(current: Fiber | null, finishedWork: Fiber): void {
       ) {
         try {
           startLayoutEffectTimer();
+          // == 执行所有 useLayoutEffect hook的销毁函数
           commitHookEffectListUnmount(HookLayout | HookHasEffect, finishedWork);
         } finally {
           recordLayoutEffectDuration(finishedWork);
@@ -1591,6 +1627,7 @@ function commitWork(current: Fiber | null, finishedWork: Fiber): void {
         const updatePayload: null | UpdatePayload = (finishedWork.updateQueue: any);
         finishedWork.updateQueue = null;
         if (updatePayload !== null) {
+          // == 执行更新 DOM 属性
           commitUpdate(
             instance,
             updatePayload,

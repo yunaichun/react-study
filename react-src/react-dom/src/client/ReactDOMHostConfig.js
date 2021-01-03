@@ -225,6 +225,7 @@ export function getPublicInstance(instance: Instance): * {
   return instance;
 }
 
+// == 处理 focus 状态
 export function prepareForCommit(containerInfo: Container): Object | null {
   eventsEnabled = ReactBrowserEventEmitterIsEnabled();
   selectionInformation = getSelectionInformation();
@@ -239,6 +240,7 @@ export function prepareForCommit(containerInfo: Container): Object | null {
   return activeInstance;
 }
 
+// == 处理 DOM 节点渲染/删除后的 autoFocus、blur 逻辑。
 export function beforeActiveInstanceBlur(): void {
   if (enableCreateEventHandleAPI) {
     ReactBrowserEventEmitterSetEnabled(true);
@@ -433,11 +435,14 @@ export function commitUpdate(
 ): void {
   // Update the props handle so that we know which props are the ones with
   // with current event handlers.
+  // == dom 添加  __reactProps$ 属性
   updateFiberProps(domElement, newProps);
   // Apply the diff to the DOM node.
+  // == 更新 dom 属性
   updateProperties(domElement, updatePayload, type, oldProps, newProps);
 }
 
+// == 根据 ContentReset effectTag 重置文字节点
 export function resetTextContent(domElement: Instance): void {
   setTextContent(domElement, '');
 }

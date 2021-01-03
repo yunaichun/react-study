@@ -391,13 +391,20 @@ function updateDOMProperties(
   for (let i = 0; i < updatePayload.length; i += 2) {
     const propKey = updatePayload[i];
     const propValue = updatePayload[i + 1];
+    // == 处理 style
     if (propKey === STYLE) {
       setValueForStyles(domElement, propValue);
-    } else if (propKey === DANGEROUSLY_SET_INNER_HTML) {
+    }
+    // == 处理 DANGEROUSLY_SET_INNER_HTML
+    else if (propKey === DANGEROUSLY_SET_INNER_HTML) {
       setInnerHTML(domElement, propValue);
-    } else if (propKey === CHILDREN) {
+    }
+    // == 处理文本节点
+    else if (propKey === CHILDREN) {
       setTextContent(domElement, propValue);
-    } else {
+    }
+    // == 处理剩余 props
+    else {
       setValueForProperty(domElement, propKey, propValue, isCustomComponentTag);
     }
   }

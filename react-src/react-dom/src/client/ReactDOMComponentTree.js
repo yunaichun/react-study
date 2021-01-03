@@ -209,7 +209,7 @@ export function getFiberCurrentPropsFromNode(
   return (node: any)[internalPropsKey] || null;
 }
 
-// ==dom 添加  __reactProps$ 属性
+// == dom 添加  __reactProps$ 属性
 export function updateFiberProps(
   node: Instance | TextInstance | SuspenseInstance,
   props: Props,
