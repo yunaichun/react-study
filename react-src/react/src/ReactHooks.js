@@ -25,6 +25,7 @@ type Dispatch<A> = A => void;
 
 // == 返回 ReactCurrentDispatcher.current
 function resolveDispatcher() {
+  // == 返回 current
   const dispatcher = ReactCurrentDispatcher.current;
   // == dispatcher 不反悔 null 
   invariant(
@@ -89,7 +90,9 @@ export function useContext<T>(
 export function useState<S>(
   initialState: (() => S) | S,
 ): [S, Dispatch<BasicStateAction<S>>] {
+  // == 返回 current
   const dispatcher = resolveDispatcher();
+  // == 调用 current.useState
   return dispatcher.useState(initialState);
 }
 

@@ -274,7 +274,7 @@ function resolveLazyType<T, P>(
 // == 首次渲染 shouldTrackSideEffects 为 false
 // == 更新时候 shouldTrackSideEffects 为 true
 function ChildReconciler(shouldTrackSideEffects) {
-  // == 标记删除节点
+  // == key 不同: 仅将 child 标记删除
   function deleteChild(
     // == 构建中 Fiber
     returnFiber: Fiber,
@@ -289,12 +289,23 @@ function ChildReconciler(shouldTrackSideEffects) {
     // deletions, so we can just append the deletion to the list. The remaining
     // effects aren't added until the complete phase. Once we implement
     // resuming, this may not be true.
+    // == 由下面的 else 判断可知，此时 last=returnFiber.lastEffect=returnFiber.firstEffect
     const last = returnFiber.lastEffect;
     if (last !== null) {
-      // == returnFiber: { lastEffect: childToDelete, firstEffect: childToDelete ... }
+      // == 到第二个待删除的子节点的时候
+      // == parent.firstEffect.nextEffect = childToDelete
+      // == parent.lastEffect = childToDelete
+      // == 2、添加第2个删除节点
+      // ==                     nextEffect 
+      // == parent.firstEffect -----------> parent.lastEffect = child
+      // == 3、添加第3个删除节点
+      // ==                     nextEffect        nextEffect
+      // == parent.firstEffect -----------> child -----------> parent.lastEffect = child
       last.nextEffect = childToDelete;
       returnFiber.lastEffect = childToDelete;
     } else {
+      // == 2、添加第1个删除节点
+      // == parent.firstEffect = child = parent.lastEffect
       returnFiber.firstEffect = returnFiber.lastEffect = childToDelete;
     }
     childToDelete.nextEffect = null;
@@ -302,7 +313,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     childToDelete.flags = Deletion;
   }
 
-  // == 标记删除节点
+  // == key 相同，type 不同: 将 child 及其兄弟 fiber 都标记删除。
   function deleteRemainingChildren(
     // == 构建中 Fiber
     returnFiber: Fiber,
@@ -348,7 +359,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     return existingChildren;
   }
 
-  // == 根据新 props 返回 Fiber 节点
+  // == 复用 FiberNode 节点
   function useFiber(
     // == 旧 Fiber 第一个子节点
     fiber: Fiber,
@@ -826,7 +837,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     return knownKeys;
   }
 
-  // == 4、 子节点是数组：这是最通常的现象了
+  // == 4、子节点是数组：这是最通常的现象了
   function reconcileChildrenArray(
     // == 构建中 Fiber
     returnFiber: Fiber,
@@ -1189,7 +1200,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     return resultingFirstChild;
   }
 
-  // == 3、textNode 节点协调
+  // == 3、子节点是单一 TextNode 节点 
   function reconcileSingleTextNode(
     returnFiber: Fiber,
     currentFirstChild: Fiber | null,
@@ -1214,7 +1225,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     return created;
   }
 
-  // == 1、React jsx 节点协调
+  // == 1、子节点是单一 React jsx 节点
   function reconcileSingleElement(
     // == 构建中 Fiber
     returnFiber: Fiber,
@@ -1232,6 +1243,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     while (child !== null) {
       // TODO: If key === null and child.key === null, then this only applies to
       // the first item in the list.
+      // == key 相同
       if (child.key === key) {
         switch (child.tag) {
           case Fragment: {
@@ -1281,6 +1293,7 @@ function ChildReconciler(shouldTrackSideEffects) {
           // We intentionally fallthrough here if enableBlocksAPI is not on.
           // eslint-disable-next-lined no-fallthrough
           default: {
+            // == key 相同，type 相同: 代表可以复用
             if (
               child.elementType === element.type ||
               // Keep this check inline so it only runs on the false path:
@@ -1289,7 +1302,7 @@ function ChildReconciler(shouldTrackSideEffects) {
                 : false)
             ) {
               deleteRemainingChildren(returnFiber, child.sibling);
-              // == 创建新的 FiberNode 节点
+              // == 复用 FiberNode 节点
               const existing = useFiber(child, element.props);
               existing.ref = coerceRef(returnFiber, child, element);
               // == return 属性指向父节点
@@ -1304,9 +1317,12 @@ function ChildReconciler(shouldTrackSideEffects) {
           }
         }
         // Didn't match.
+        // == key 相同，type 不同: 将 child 及其兄弟 fiber 都标记删除。
         deleteRemainingChildren(returnFiber, child);
         break;
-      } else {
+      }
+      // == key 不同: 仅将 child 标记删除
+      else {
         deleteChild(returnFiber, child);
       }
       // == 循环遍历：旧 Fiber 第一个子节点的下一个兄弟节点
@@ -1333,7 +1349,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     }
   }
 
-  // == 2、portal 节点协调
+  // == 2、子节点是单一 portal 节点
   function reconcileSinglePortal(
     returnFiber: Fiber,
     currentFirstChild: Fiber | null,
