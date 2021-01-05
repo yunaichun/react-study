@@ -646,7 +646,11 @@ export function scheduleUpdateOnFiber(
   // == 待办事项: requestUpdateLanePriority 也读取优先级。通过优先级作为该功能和该功能的参数。
   const priorityLevel = getCurrentPriorityLevel();
 
-  // == 同步渲染，优先级最高
+  // == react 模式: https://zh-hans.reactjs.org/docs/concurrent-mode-adoption.html#why-so-many-modes
+  // == legacy 模式: ReactDOM.render(<App />, rootNode)。
+  // == blocking 模式: ReactDOM.createBlockingRoot(rootNode).render(<App />)。
+  // == concurrent 模式: ReactDOM.createRoot(rootNode).render(<App />)。创建的更新具有不同的优先级，同时也是可以打断的
+  // == 同步渲染，优先级最高: legacy 模式，通过  ReactDOM.render 创建的 dom
   if (lane === SyncLane) {
     // == mount 阶段
     if (
@@ -673,9 +677,12 @@ export function scheduleUpdateOnFiber(
       ensureRootIsScheduled(root, eventTime);
       // == 在根 root 上注册待处理的交互，以避免丢失跟踪的交互数据
       schedulePendingInteractions(root, lane);
-      // == 除非已经在批量更新中，否则立即刷新同步工作；
-      // == 这是在 scheduleUpdateOnFiber 内部而不是 scheduleCallbackForFiber 内部，目的是在没有立即更新的情况下，保留调度回调的能力；
-      // == 我们仅针对用户发起的操作更新，以保留传统模式的历史行为。
+      // == 比如在 legacy 模式的 setTimeout 中调用了 setState 
+      // == batchedUpdates 函数里回调是异步的话 executionContext 为 null
+      // == batchedUpdates 函数里回调是同步的话 executionContext 不为 null
+      // == 1、所以 legacy 模式下，命中 batchedUpdates 时异步
+      // == 2、所以 legacy 模式下，未命中 batchedUpdates 时同步（setTimeout 里调用 setState）
+      // == 3、concurrent 模式，都是异步的
       if (executionContext === NoContext) {
         // Flush the synchronous work now, unless we're already working or inside
         // a batch. This is intentionally inside scheduleUpdateOnFiber instead of
@@ -683,11 +690,12 @@ export function scheduleUpdateOnFiber(
         // without immediately flushing it. We only do this for user-initiated
         // updates, to preserve historical behavior of legacy mode.
         resetRenderTimer();
+        // == 同步执行回调
         flushSyncCallbackQueue();
       }
     }
   }
-  // == 非同步渲染，其他优先级（如用户操作、forceUpdate等）
+  // == 非同步渲染，其他优先级: concurrent 模式，通过  ReactDOM.createRoot 创建的 dom
   else {
     // Schedule a discrete update but only if it's not Sync.
     if (
@@ -794,16 +802,20 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
 
   // Check if any lanes are being starved by other work. If so, mark them as
   // expired so we know to work on those next.
+  // == 标记为已过期
   markStarvedLanesAsExpired(root, currentTime);
 
   // Determine the next lanes to work on, and their priority.
+  // == 确定下一个 lanes 及优先级
   const nextLanes = getNextLanes(
     root,
     root === workInProgressRoot ? workInProgressRootRenderLanes : NoLanes,
   );
   // This returns the priority level computed during the `getNextLanes` call.
+  // == 基于 nextLanes 得到优先级
   const newCallbackPriority = returnNextLanesPriority();
 
+  // == 无需更新
   if (nextLanes === NoLanes) {
     // Special case: There's nothing to work on.
     if (existingCallbackNode !== null) {
@@ -815,19 +827,24 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
   }
 
   // Check if there's an existing task. We may be able to reuse it.
+  // == 检查是否有已存在的任务，我们可能重用
   if (existingCallbackNode !== null) {
     const existingCallbackPriority = root.callbackPriority;
     if (existingCallbackPriority === newCallbackPriority) {
       // The priority hasn't changed. We can reuse the existing task. Exit.
+      // == 已有任务和当前优先级一样，复用任务
       return;
     }
     // The priority changed. Cancel the existing callback. We'll schedule a new
     // one below.
+    // == 优先级存在，取消已有任务
     cancelCallback(existingCallbackNode);
   }
 
   // Schedule a new callback.
+  // == 调度新的回调
   let newCallbackNode;
+  // == 同步更新: legacy 模式，通过  ReactDOM.render 创建的 dom
   if (newCallbackPriority === SyncLanePriority) {
     // Special case: Sync React callbacks are scheduled on a special
     // internal queue
@@ -835,13 +852,17 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
     newCallbackNode = scheduleSyncCallback(
       performSyncWorkOnRoot.bind(null, root),
     );
-  } else if (newCallbackPriority === SyncBatchedLanePriority) {
+  }
+  // == 批量更新: legacy 模式，通过  ReactDOM.render 创建的 dom
+  else if (newCallbackPriority === SyncBatchedLanePriority) {
     // == 批量更新任务
     newCallbackNode = scheduleCallback(
       ImmediateSchedulerPriority,
       performSyncWorkOnRoot.bind(null, root),
     );
-  } else {
+  }
+  // == 非同步更新，其他优先级: concurrent 模式，通过  ReactDOM.createRoot 创建的 dom
+  else {
     // == 根据任务优先级异步执行 render 阶段
     const schedulerPriorityLevel = lanePriorityToSchedulerPriority(
       newCallbackPriority,
@@ -1275,6 +1296,7 @@ function flushPendingDiscreteUpdates() {
   flushSyncCallbackQueue();
 }
 
+// == 批处理
 export function batchedUpdates<A, R>(fn: A => R, a: A): R {
   const prevExecutionContext = executionContext;
   executionContext |= BatchedContext;

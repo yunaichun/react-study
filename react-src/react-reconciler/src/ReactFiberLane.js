@@ -135,14 +135,17 @@ export function setCurrentUpdateLanePriority(newLanePriority: LanePriority) {
 let return_highestLanePriority: LanePriority = DefaultLanePriority;
 
 function getHighestPriorityLanes(lanes: Lanes | Lane): Lanes {
+  // == 同步任务
   if ((SyncLane & lanes) !== NoLanes) {
     return_highestLanePriority = SyncLanePriority;
     return SyncLane;
   }
+  // == 批量更新
   if ((SyncBatchedLane & lanes) !== NoLanes) {
     return_highestLanePriority = SyncBatchedLanePriority;
     return SyncBatchedLane;
   }
+  // == 用户输入
   if ((InputDiscreteHydrationLane & lanes) !== NoLanes) {
     return_highestLanePriority = InputDiscreteHydrationLanePriority;
     return InputDiscreteHydrationLane;
