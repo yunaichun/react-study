@@ -590,23 +590,23 @@ export function scheduleUpdateOnFiber(
   lane: Lane,
   eventTime: number,
 ) {
-  // == 校验是否无限循环
+  // == 校验是否无限循环更新
   checkForNestedUpdates();
   // == 开发环境: 渲染阶段更新相关警告
   warnAboutRenderPhaseUpdatesInDEV(fiber);
 
-  // == alternate 为旧 Fiber 节点的引用: 合并 alternate 的 lanes 属性
+  // == 得到 root Fiber
   const root = markUpdateLaneFromFiberToRoot(fiber, lane);
   if (root === null) {
-    // == 根节点为 null 的情况: 表示还未挂载呢
     warnAboutUpdateOnUnmountedFiberInDEV(fiber);
     return null;
   }
 
   // Mark that the root has a pending update.
-  // == 标记根节点被更新过
+  // == 标记根节点即将更新
   markRootUpdated(root, lane, eventTime);
 
+  // == 渲染中的一棵树的更新
   if (root === workInProgressRoot) {
     // Received an update to a tree that's in the middle of rendering. Mark
     // that there was an interleaved update work on this root. Unless the
@@ -614,7 +614,7 @@ export function scheduleUpdateOnFiber(
     // phase update. In that case, we don't treat render phase updates as if
     // they were interleaved, for backwards compat reasons.
     // == 收到了渲染中的一棵树的更新。标记在此 root 上有交错的更新工作。
-    // == 除非 DeferRenderPhaseUpdateToNextBatch 标志已关闭，这是一个渲染阶段更新。
+    // == 除非 DeferRenderPhaseUpdateToNextBatch 标志已关闭，并且这是一个渲染阶段更新。
     // == 在这种情况下，我们不会像对待渲染阶段更新那样对待由于向后兼容。
     if (
       deferRenderPhaseUpdateToNextBatch ||
@@ -626,6 +626,10 @@ export function scheduleUpdateOnFiber(
         lane,
       );
     }
+    // == 根 root 已经暂停了一段时间，这意味着渲染肯定不会完成。
+    // == 由于我们有新的更新，因此将其标记为现在暂停，即标记为将来临的更新。
+    // == 这有中断当前渲染并切换到更新的效果。
+    // == 待办事项：确保此操作不会覆盖我们已经完成的更新。
     if (workInProgressRootExitStatus === RootSuspendedWithDelay) {
       // The root already suspended with a delay, which means this render
       // definitely won't finish. Since we have a new update, let's mark it as
@@ -633,22 +637,18 @@ export function scheduleUpdateOnFiber(
       // effect of interrupting the current render and switching to the update.
       // TODO: Make sure this doesn't override pings that happen while we've
       // already started rendering.
-      // == 根 root 已经暂停了一段时间，这意味着渲染肯定不会完成。
-      // == 由于我们有新的更新，因此将其标记为现在暂停，即标记为将来临的更新。
-      // == 这有中断当前渲染并切换到更新的效果。
-      // == 待办事项：请确保此操作不会覆盖我们执行操作时执行的ping操作已经开始渲染。
-      // == 在渲染阶段有新的更新: 标记当前 root 暂停更新
       markRootSuspended(root, workInProgressRootRenderLanes);
     }
   }
 
   // TODO: requestUpdateLanePriority also reads the priority. Pass the
   // priority as an argument to that function and this one.
-  // == 待办事项：requestUpdateLanePriority 也读取优先级。通过优先级作为该功能和该功能的参数。
+  // == 待办事项: requestUpdateLanePriority 也读取优先级。通过优先级作为该功能和该功能的参数。
   const priorityLevel = getCurrentPriorityLevel();
 
+  // == 同步渲染，优先级最高
   if (lane === SyncLane) {
-    // == 同步更新
+    // == mount 阶段
     if (
       // Check if we're inside unbatchedUpdates
       // == 检查我们是否在未批处理的更新中
@@ -664,15 +664,18 @@ export function scheduleUpdateOnFiber(
       // This is a legacy edge case. The initial mount of a ReactDOM.render-ed
       // root inside of batchedUpdates should be synchronous, but layout updates
       // should be deferred until the end of the batch.
-      // == 这是一个遗留的边缘情况。 ReactDOM.render-ed 的初始安装 batchedUpdates内部的根应该是同步的，
-      // == 但是布局更新应该推迟到批处理结束。
-      // == 1. 首先, 创建一个新节点
-      // == 2. 通过 reconcileChildren 函数来创建新的 Fiber 树
-      // == 3. 最后, 搜索下一个工作单元: 首先子节点 -> 然后右兄弟节点 -> 最后父节点. 依此类推
+      // == 初始包含批量更新的 ReactDOM.render 应该同步更新的，但是布局更新应该延迟到批量更新结束
       performSyncWorkOnRoot(root);
-    } else {
+    }
+    // == update 阶段
+    else {
+      // == 调度更新
       ensureRootIsScheduled(root, eventTime);
+      // == 在根 root 上注册待处理的交互，以避免丢失跟踪的交互数据
       schedulePendingInteractions(root, lane);
+      // == 除非已经在批量更新中，否则立即刷新同步工作；
+      // == 这是在 scheduleUpdateOnFiber 内部而不是 scheduleCallbackForFiber 内部，目的是在没有立即更新的情况下，保留调度回调的能力；
+      // == 我们仅针对用户发起的操作更新，以保留传统模式的历史行为。
       if (executionContext === NoContext) {
         // Flush the synchronous work now, unless we're already working or inside
         // a batch. This is intentionally inside scheduleUpdateOnFiber instead of
@@ -683,18 +686,22 @@ export function scheduleUpdateOnFiber(
         flushSyncCallbackQueue();
       }
     }
-  } else {
+  }
+  // == 非同步渲染，其他优先级（如用户操作、forceUpdate等）
+  else {
     // Schedule a discrete update but only if it's not Sync.
-    // == 调度离散更新，但仅在不同步时进行。
     if (
       (executionContext & DiscreteEventContext) !== NoContext &&
       // Only updates at user-blocking priority or greater are considered
       // discrete, even inside a discrete event.
+      // == 1、用户交互操作
+      // == 2、立即更新
       (priorityLevel === UserBlockingSchedulerPriority ||
         priorityLevel === ImmediateSchedulerPriority)
     ) {
       // This is the result of a discrete event. Track the lowest priority
       // discrete update per root so we can flush them early, if needed.
+      // == 这是离散事件的结果。跟踪最低优先级每个 root 的离散更新，以便我们可以在需要时及早刷新它们。
       if (rootsWithPendingDiscreteUpdates === null) {
         rootsWithPendingDiscreteUpdates = new Set([root]);
       } else {
@@ -702,7 +709,9 @@ export function scheduleUpdateOnFiber(
       }
     }
     // Schedule other updates after in case the callback is sync.
+    // == 调度更新
     ensureRootIsScheduled(root, eventTime);
+    // == 在根 root 上注册待处理的交互，以避免丢失跟踪的交互数据
     schedulePendingInteractions(root, lane);
   }
 
@@ -777,6 +786,9 @@ function markUpdateLaneFromFiberToRoot(
 // of the existing task is the same as the priority of the next level that the
 // root has work on. This function is called on every update, and right before
 // exiting a task.
+// == 使用这个方法在跟节点进行任务调度，每个跟节点只能有一个任务；
+// == 如果已经有一个任务被调度了，我们将检查以确保现有任务的优先级与下一级别的优先级相同 root 
+// == 每次更新时都会调用此函数
 function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
   const existingCallbackNode = root.callbackNode;
 
@@ -819,15 +831,18 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
   if (newCallbackPriority === SyncLanePriority) {
     // Special case: Sync React callbacks are scheduled on a special
     // internal queue
+    // == 同步任务
     newCallbackNode = scheduleSyncCallback(
       performSyncWorkOnRoot.bind(null, root),
     );
   } else if (newCallbackPriority === SyncBatchedLanePriority) {
+    // == 批量更新任务
     newCallbackNode = scheduleCallback(
       ImmediateSchedulerPriority,
       performSyncWorkOnRoot.bind(null, root),
     );
   } else {
+    // == 根据任务优先级异步执行 render 阶段
     const schedulerPriorityLevel = lanePriorityToSchedulerPriority(
       newCallbackPriority,
     );
