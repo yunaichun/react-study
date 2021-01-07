@@ -195,12 +195,6 @@ export function cloneUpdateQueue<State>(
 }
 
 // == 根据 eventTime, lane 创建更新对象
-// == 可以触发更新的方法所隶属的组件分类：
-// == 1、ReactDOM.render —— HostRoot
-// == 2、this.setState —— ClassComponent
-// == 3、this.forceUpdate —— ClassComponent
-// == 4、useState —— FunctionComponent
-// == 5、useReducer —— FunctionComponent
 export function createUpdate(eventTime: number, lane: Lane): Update<*> {
   const update: Update<*> = {
     // == 任务时间，通过 performance.now() 获取的毫秒数

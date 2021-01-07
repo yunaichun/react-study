@@ -652,7 +652,7 @@ export function scheduleUpdateOnFiber(
   // == concurrent 模式: ReactDOM.createRoot(rootNode).render(<App />)。创建的更新具有不同的优先级，同时也是可以打断的
   // == 同步渲染，优先级最高: legacy 模式，通过  ReactDOM.render 创建的 dom
   if (lane === SyncLane) {
-    // == mount 阶段
+    // == mount 阶段: legacy 模式
     if (
       // Check if we're inside unbatchedUpdates
       // == 检查我们是否在未批处理的更新中
@@ -672,6 +672,12 @@ export function scheduleUpdateOnFiber(
       performSyncWorkOnRoot(root);
     }
     // == update 阶段
+    // == 可以触发更新的方法所隶属的组件分类：
+    // == 1、ReactDOM.render —— HostRoot
+    // == 2、this.setState —— ClassComponent
+    // == 3、this.forceUpdate —— ClassComponent
+    // == 4、useState —— FunctionComponent
+    // == 5、useReducer —— FunctionComponent
     else {
       // == 调度更新
       ensureRootIsScheduled(root, eventTime);
