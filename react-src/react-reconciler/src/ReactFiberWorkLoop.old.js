@@ -646,19 +646,18 @@ export function scheduleUpdateOnFiber(
   // == 待办事项: requestUpdateLanePriority 也读取优先级。通过优先级作为该功能和该功能的参数。
   const priorityLevel = getCurrentPriorityLevel();
 
-  // == react 模式: https://zh-hans.reactjs.org/docs/concurrent-mode-adoption.html#why-so-many-modes
-  // == legacy 模式: ReactDOM.render(<App />, rootNode)。
-  // == blocking 模式: ReactDOM.createBlockingRoot(rootNode).render(<App />)。
-  // == concurrent 模式: ReactDOM.createRoot(rootNode).render(<App />)。创建的更新具有不同的优先级，同时也是可以打断的
-  // == 同步渲染，优先级最高: legacy 模式，通过  ReactDOM.render 创建的 dom
+  // == react 渲染模式: https://zh-hans.reactjs.org/docs/concurrent-mode-adoption.html#why-so-many-modes
+  // == 1、legacy 模式: ReactDOM.render(<App />, rootNode)。
+  // == 2、blocking 模式: ReactDOM.createBlockingRoot(rootNode).render(<App />)。
+  // == 3、concurrent 模式: ReactDOM.createRoot(rootNode).render(<App />)。创建的更新具有不同的优先级，同时也是可以打断的
+  
+  // == 同步 render: legacy 模式，通过  ReactDOM.render 创建的 dom
   if (lane === SyncLane) {
-    // == mount 阶段: legacy 模式
+    // == 非批量更新且尚未渲染
     if (
       // Check if we're inside unbatchedUpdates
-      // == 检查我们是否在未批处理的更新中
       (executionContext & LegacyUnbatchedContext) !== NoContext &&
       // Check if we're not already rendering
-      // == 检查我们是否尚未渲染
       (executionContext & (RenderContext | CommitContext)) === NoContext
     ) {
       // Register pending interactions on the root to avoid losing traced interaction data.
@@ -668,27 +667,17 @@ export function scheduleUpdateOnFiber(
       // This is a legacy edge case. The initial mount of a ReactDOM.render-ed
       // root inside of batchedUpdates should be synchronous, but layout updates
       // should be deferred until the end of the batch.
-      // == 初始包含批量更新的 ReactDOM.render 应该同步更新的，但是布局更新应该延迟到批量更新结束
       performSyncWorkOnRoot(root);
     }
-    // == update 阶段
-    // == 可以触发更新的方法所隶属的组件分类：
-    // == 1、ReactDOM.render —— HostRoot
-    // == 2、this.setState —— ClassComponent
-    // == 3、this.forceUpdate —— ClassComponent
-    // == 4、useState —— FunctionComponent
-    // == 5、useReducer —— FunctionComponent
+    // == 批量更新或已经渲染
     else {
       // == 调度更新
       ensureRootIsScheduled(root, eventTime);
       // == 在根 root 上注册待处理的交互，以避免丢失跟踪的交互数据
       schedulePendingInteractions(root, lane);
-      // == 比如在 legacy 模式的 setTimeout 中调用了 setState 
-      // == batchedUpdates 函数里回调是异步的话 executionContext 为 null
-      // == batchedUpdates 函数里回调是同步的话 executionContext 不为 null
-      // == 1、所以 legacy 模式下，命中 batchedUpdates 时异步
-      // == 2、所以 legacy 模式下，未命中 batchedUpdates 时同步（setTimeout 里调用 setState）
-      // == 3、concurrent 模式，都是异步的
+
+      // == 1、setTimeout 中执行 setState 
+      // == 2、导致 batchedUpdates 中 executionContext 为 null
       if (executionContext === NoContext) {
         // Flush the synchronous work now, unless we're already working or inside
         // a batch. This is intentionally inside scheduleUpdateOnFiber instead of
@@ -701,15 +690,14 @@ export function scheduleUpdateOnFiber(
       }
     }
   }
-  // == 非同步渲染，其他优先级: concurrent 模式，通过  ReactDOM.createRoot 创建的 dom
+  // == 非同步 render: concurrent 模式，通过  ReactDOM.createRoot 创建的 dom
   else {
     // Schedule a discrete update but only if it's not Sync.
     if (
       (executionContext & DiscreteEventContext) !== NoContext &&
       // Only updates at user-blocking priority or greater are considered
       // discrete, even inside a discrete event.
-      // == 1、用户交互操作
-      // == 2、立即更新
+      // == 1、用户交互操作、2、立即更新
       (priorityLevel === UserBlockingSchedulerPriority ||
         priorityLevel === ImmediateSchedulerPriority)
     ) {

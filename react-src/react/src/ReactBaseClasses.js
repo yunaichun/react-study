@@ -56,6 +56,20 @@ Component.prototype.isReactComponent = {};
  * @protected
  */
 // == 更新方法: 可以是 object 或 function 或 null
+// == 可以触发更新的方法所隶属的组件分类：
+// 1、HostRoot
+// ReactDOM.render
+// 2、ClassComponent
+// this.setState、this.forceUpdate
+// 3、FunctionComponent
+// useState、useReducer
+
+// == 比如在 legacy 模式的 setTimeout 中调用了 setState 
+// == batchedUpdates 函数里回调是异步的话 executionContext 为 null
+// == batchedUpdates 函数里回调是同步的话 executionContext 不为 null
+// == 1、所以 legacy 模式下，命中 batchedUpdates 时异步
+// == 2、所以 legacy 模式下，未命中 batchedUpdates 时同步（setTimeout 里调用 setState）
+// == 3、concurrent 模式，都是异步的
 Component.prototype.setState = function(partialState, callback) {
   invariant(
     typeof partialState === 'object' ||

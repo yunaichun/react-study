@@ -209,8 +209,8 @@ export function createUpdate(eventTime: number, lane: Lane): Update<*> {
     // == 对于 HostRoot，payload 为 ReactDOM.render 的第一个传参。
     payload: null,
     // == 更新的回调函数。不同类型组件挂载的数据不同：
-    // == 对于 ClassComponent，payload 为 this.setState 的第二个传参。
-    // == 对于 HostRoot，payload 为 ReactDOM.render 的第三个传参。
+    // == 对于 ClassComponent，callback 为 this.setState 的第二个传参。
+    // == 对于 HostRoot，callback 为 ReactDOM.render 的第三个传参。
     callback: null,
 
     // == 与其他Update连接形成链表。挂载 fiber.updateQueue.shared.pending.next
