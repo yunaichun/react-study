@@ -327,10 +327,17 @@ export function updateContainer(
   }
 
   // == 根据 eventTime, lane 创建更新对象
+  // {
+  //   eventTime,
+  //   lane,
+  //   tag: UpdateState,
+  //   payload: null,
+  //   callback: null,
+  //   next: null,
+  // }
   const update = createUpdate(eventTime, lane);
   // Caution: React DevTools currently depends on this property
   // being called "element".
-  // == 警告: React DevTools 当前取决于此属性 被称为“元素”。
   update.payload = {element};
 
   callback = callback === undefined ? null : callback;
@@ -347,9 +354,11 @@ export function updateContainer(
     update.callback = callback;
   }
 
-  // == 执行更新队列【current: 传入容器节点挂载的 FiberNode; update: 根据 eventTime, lane 创建更新对象】
-  // == update.next = fiber.updateQueue.shared.pending.next
-  // == fiber.updateQueue.shared.pending.next = update
+  // == current - 传入容器节点挂载的 FiberNode
+  // == update - 根据 eventTime, lane 创建的更新对象
+  // == 形成环状链表
+  //           next                                      next
+  // update --------> fiber.updateQueue.shared.pending --------->  update
   enqueueUpdate(current, update);
   // == 执行 Fiber 节点的更新调度
   scheduleUpdateOnFiber(current, lane, eventTime);

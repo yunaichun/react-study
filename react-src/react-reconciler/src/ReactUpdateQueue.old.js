@@ -154,15 +154,21 @@ if (__DEV__) {
   };
 }
 
-// == 初始化更新队列: FiberNode
+// == 初始化 fiber Node 更新队列 UpdateQueue
 export function initializeUpdateQueue<State>(fiber: Fiber): void {
   const queue: UpdateQueue<State> = {
+    // == 本次更新前该 Fiber 节点的 state，Update 基于该 state 计算更新后的 state
     baseState: fiber.memoizedState,
+    // == 本次更新前该 Fiber 节点已保存的 Update 。以链表形式存在，链表头为 firstBaseUpdate ，链表尾为 lastBaseUpdate 。
+    // == 之所以在更新产生前该 Fiber 节点内就存在 Update，是由于某些 Update 优先级较低所以在上次 render 阶段由 Update 计算 state 时被跳过。
     firstBaseUpdate: null,
     lastBaseUpdate: null,
+    // == 触发更新时，产生的 Update 会保存在 shared.pending 中形成单向环状链表。
+    // == 当由 Update 计算 state 时这个环会被剪开并连接在 lastBaseUpdate 后面。
     shared: {
       pending: null,
     },
+    // == 数组。保存 update.calback !== null 的 Update
     effects: null,
   };
   // == 初始化时 this.updateQueue 的值为 uninitializedFiber
@@ -189,22 +195,33 @@ export function cloneUpdateQueue<State>(
 }
 
 // == 根据 eventTime, lane 创建更新对象
+// == 可以触发更新的方法所隶属的组件分类：
+// == 1、ReactDOM.render —— HostRoot
+// == 2、this.setState —— ClassComponent
+// == 3、this.forceUpdate —— ClassComponent
+// == 4、useState —— FunctionComponent
+// == 5、useReducer —— FunctionComponent
 export function createUpdate(eventTime: number, lane: Lane): Update<*> {
   const update: Update<*> = {
+    // == 任务时间，通过 performance.now() 获取的毫秒数
     eventTime,
+    // == 优先级相关字段
     lane,
 
-    // == 更新状态为 0
+    // == 更新的类型，包括UpdateState | ReplaceState | ForceUpdate | CaptureUpdate
     tag: UpdateState,
-    // == React DevTools 使用
+    // == 更新挂载的数据。不同类型组件挂载的数据不同：
+    // == 对于 ClassComponent，payload 为 this.setState 的第一个传参。
+    // == 对于 HostRoot，payload 为 ReactDOM.render 的第一个传参。
     payload: null,
-    // == 回调函数
+    // == 更新的回调函数。不同类型组件挂载的数据不同：
+    // == 对于 ClassComponent，payload 为 this.setState 的第二个传参。
+    // == 对于 HostRoot，payload 为 ReactDOM.render 的第三个传参。
     callback: null,
 
-    // == 挂载 fiber.updateQueue.shared.pending.next
+    // == 与其他Update连接形成链表。挂载 fiber.updateQueue.shared.pending.next
     next: null,
   };
-  // == 返回更新对象
   return update;
 }
 
@@ -212,23 +229,12 @@ export function createUpdate(eventTime: number, lane: Lane): Update<*> {
 // == update.next = fiber.updateQueue.shared.pending.next
 // == fiber.updateQueue.shared.pending.next = update
 export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
-  // == initializeUpdateQueue(uninitializedFiber) 中初始化的
-  // == 该 FiberNode 对应的组件产生的 Update 会存放在这个队列里面
-  // == setState 算出新的 state 就是存放在 updateQueue 中
-  // == const queue = {
-  // ==   baseState: fiber.memoizedState,
-  // ==   firstBaseUpdate: null,
-  // ==   lastBaseUpdate: null,
-  // ==   shared: {
-  // ==     pending: null,
-  // ==   },
-  // ==   effects: null,
-  // == };
-  // fiber.updateQueue = queue;
+  // == 该 FiberNode 对应的组件产生的 Update 会存放在 updateQueue 这个队列里面
+  // == updateQueue 的初始化是在 initializeUpdateQueue(uninitializedFiber)
   const updateQueue = fiber.updateQueue;
-  // == 还没挂载的时候不执行后续逻辑
   if (updateQueue === null) {
     // Only occurs if the fiber has been unmounted.
+    // == 初始渲染，还未挂载
     return;
   }
 
@@ -237,16 +243,15 @@ export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
   const pending = sharedQueue.pending;
   if (pending === null) {
     // This is the first update. Create a circular list.
-    // == 初始更新 pending 为 null
+    // == 1、初始更新 pending 为 null，创建一个环状的链表
     update.next = update;
   } else {
-    // == 非初始更新
-    // == update.next = fiber.updateQueue.shared.pending.next
+    // == 2、非初始更新
+    //           next                                      next
+    // update --------> fiber.updateQueue.shared.pending --------->  update
     update.next = pending.next;
-    // == fiber.updateQueue.shared.pending.next = update
     pending.next = update;
   }
-  // == fiber.updateQueue.shared.pending = update
   sharedQueue.pending = update;
 
   if (__DEV__) {
