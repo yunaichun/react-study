@@ -175,6 +175,7 @@ export function initializeUpdateQueue<State>(fiber: Fiber): void {
   fiber.updateQueue = queue;
 }
 
+// == workInProgress 克隆 current 的 UpdateQueue
 export function cloneUpdateQueue<State>(
   current: Fiber,
   workInProgress: Fiber,

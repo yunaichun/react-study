@@ -170,7 +170,8 @@ export function applyDerivedStateFromProps(
     }
   }
 
-  // == 生成新的 state
+  // == 生成新的 state。
+  // == 不想更新 state 返回 null 或 undefined 即可
   const partialState = getDerivedStateFromProps(nextProps, prevState);
 
   if (__DEV__) {
@@ -298,6 +299,7 @@ const classComponentUpdater = {
   },
 };
 
+// == 返回 shouldUpdate
 function checkShouldComponentUpdate(
   workInProgress,
   ctor,
@@ -323,6 +325,7 @@ function checkShouldComponentUpdate(
         }
       }
     }
+    // == 调用 shouldComponentUpdate
     const shouldUpdate = instance.shouldComponentUpdate(
       newProps,
       newState,
@@ -339,9 +342,11 @@ function checkShouldComponentUpdate(
       }
     }
 
+    // == 返回 shouldUpdate
     return shouldUpdate;
   }
 
+  // == 如果 isPureReactComponent，自动浅比较
   if (ctor.prototype && ctor.prototype.isPureReactComponent) {
     return (
       !shallowEqual(oldProps, newProps) || !shallowEqual(oldState, newState)
@@ -933,9 +938,11 @@ function resumeMountClassInstance(
 ): boolean {
   const instance = workInProgress.stateNode;
 
+  // == props
   const oldProps = workInProgress.memoizedProps;
   instance.props = oldProps;
 
+  // == context 相关
   const oldContext = instance.context;
   const contextType = ctor.contextType;
   let nextContext = emptyContextObject;
@@ -961,6 +968,7 @@ function resumeMountClassInstance(
 
   // In order to support react-lifecycles-compat polyfilled components,
   // Unsafe lifecycles should not be invoked for components using the new APIs.
+  // == 兼容之前的生命周期 ComponentWillReceiveProps
   if (
     !hasNewLifecycles &&
     (typeof instance.UNSAFE_componentWillReceiveProps === 'function' ||
@@ -980,7 +988,9 @@ function resumeMountClassInstance(
 
   const oldState = workInProgress.memoizedState;
   let newState = (instance.state = oldState);
-  processUpdateQueue(workInProgress, newProps, instance, renderLanes);
+  // == 根据 Update 计算出新的 workInProgress
+  processUpdateQueue(workInProgress, newProps, in
+    stance, renderLanes);
   newState = workInProgress.memoizedState;
   if (
     oldProps === newProps &&
@@ -996,6 +1006,7 @@ function resumeMountClassInstance(
     return false;
   }
 
+  // == 调用 getDerivedStateFromProps 生命周期得到新的 memoizedState
   if (typeof getDerivedStateFromProps === 'function') {
     applyDerivedStateFromProps(
       workInProgress,
@@ -1006,6 +1017,7 @@ function resumeMountClassInstance(
     newState = workInProgress.memoizedState;
   }
 
+  // == 调用 componentShouldUpdate 得到 shouldUpdate
   const shouldUpdate =
     checkHasForceUpdateAfterProcessing() ||
     checkShouldComponentUpdate(
@@ -1018,6 +1030,7 @@ function resumeMountClassInstance(
       nextContext,
     );
 
+  // == 兼容之前的生命周期 componentWillMount
   if (shouldUpdate) {
     // In order to support react-lifecycles-compat polyfilled components,
     // Unsafe lifecycles should not be invoked for components using the new APIs.
@@ -1055,6 +1068,7 @@ function resumeMountClassInstance(
   instance.state = newState;
   instance.context = nextContext;
 
+  // == 返回是否更新
   return shouldUpdate;
 }
 
@@ -1069,6 +1083,7 @@ function updateClassInstance(
 ): boolean {
   const instance = workInProgress.stateNode;
 
+  // == workInProgress 克隆 current 的 UpdateQueue
   cloneUpdateQueue(current, workInProgress);
 
   const unresolvedOldProps = workInProgress.memoizedProps;
@@ -1079,6 +1094,7 @@ function updateClassInstance(
   instance.props = oldProps;
   const unresolvedNewProps = workInProgress.pendingProps;
 
+  // == context 相关
   const oldContext = instance.context;
   const contextType = ctor.contextType;
   let nextContext = emptyContextObject;
@@ -1100,6 +1116,7 @@ function updateClassInstance(
 
   // In order to support react-lifecycles-compat polyfilled components,
   // Unsafe lifecycles should not be invoked for components using the new APIs.
+  // == 兼容之前的生命周期 ComponentWillReceiveProps
   if (
     !hasNewLifecycles &&
     (typeof instance.UNSAFE_componentWillReceiveProps === 'function' ||
@@ -1122,6 +1139,7 @@ function updateClassInstance(
 
   const oldState = workInProgress.memoizedState;
   let newState = (instance.state = oldState);
+  // == 根据 Update 计算出新的 workInProgress
   processUpdateQueue(workInProgress, newProps, instance, renderLanes);
   newState = workInProgress.memoizedState;
 
@@ -1152,6 +1170,7 @@ function updateClassInstance(
     return false;
   }
 
+  // == 调用 getDerivedStateFromProps 生命周期得到新的 memoizedState
   if (typeof getDerivedStateFromProps === 'function') {
     applyDerivedStateFromProps(
       workInProgress,
@@ -1162,6 +1181,7 @@ function updateClassInstance(
     newState = workInProgress.memoizedState;
   }
 
+  // == 调用 componentShouldUpdate 得到 shouldUpdate
   const shouldUpdate =
     checkHasForceUpdateAfterProcessing() ||
     checkShouldComponentUpdate(
@@ -1174,6 +1194,7 @@ function updateClassInstance(
       nextContext,
     );
 
+  // == 兼容之前的生命周期 componentWillUpdate
   if (shouldUpdate) {
     // In order to support react-lifecycles-compat polyfilled components,
     // Unsafe lifecycles should not be invoked for components using the new APIs.
@@ -1227,6 +1248,7 @@ function updateClassInstance(
   instance.state = newState;
   instance.context = nextContext;
 
+  // == 返回是否更新
   return shouldUpdate;
 }
 
