@@ -48,6 +48,7 @@
 
 #### react 源码阅读相关
 
+- ReactDOM.children: https://www.answera.top/frontend/react/source-code/ReactDOM.children
 - ReactDOM.render: https://www.answera.top/frontend/react/source-code/ReactDOM.render
 - createContainer: https://www.answera.top/frontend/react/source-code/createContainer
 - listenToAllSupportedEvents: https://www.answera.top/frontend/react/source-code/listenToAllSupportedEvents
@@ -55,6 +56,10 @@
 - beginWork: https://www.answera.top/frontend/react/source-code/beginWork
 - completeUnitOfWork: https://www.answera.top/frontend/react/source-code/completeUnitOfWork
 - commitRoot: https://www.answera.top/frontend/react/source-code/commitRoot
+- Class Component: https://www.answera.top/frontend/react/source-code/class-component
+- Function Component: https://www.answera.top/frontend/react/source-code/function-component
+- Server Component: https://www.answera.top/frontend/react/source-code/server-component
+- 性能优化: https://www.answera.top/frontend/react/source-code/optimization-performance
 
 ## 参考资料
 
