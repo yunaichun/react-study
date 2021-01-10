@@ -1297,7 +1297,7 @@ function ChildReconciler(shouldTrackSideEffects) {
                   return existing;
                 }
               }
-            }
+          }
           // We intentionally fallthrough here if enableBlocksAPI is not on.
           // eslint-disable-next-lined no-fallthrough
           default: {

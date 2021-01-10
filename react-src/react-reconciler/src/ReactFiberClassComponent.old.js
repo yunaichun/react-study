@@ -145,7 +145,8 @@ if (__DEV__) {
   });
   Object.freeze(fakeInternalInstance);
 }
-
+ 
+// == 执行生命周期，更新 workInProgress 的 memoizedState
 export function applyDerivedStateFromProps(
   workInProgress: Fiber,
   ctor: any,
@@ -169,12 +170,14 @@ export function applyDerivedStateFromProps(
     }
   }
 
+  // == 生成新的 state
   const partialState = getDerivedStateFromProps(nextProps, prevState);
 
   if (__DEV__) {
     warnOnUndefinedDerivedState(ctor, partialState);
   }
   // Merge the partial state and the previous state.
+  // == 直接更新 workInProgress 的 memoizedState
   const memoizedState =
     partialState === null || partialState === undefined
       ? prevState
@@ -193,12 +196,18 @@ export function applyDerivedStateFromProps(
 const classComponentUpdater = {
   isMounted,
   enqueueSetState(inst, payload, callback) {
+    // == inst 就是传入的 this，通过 this 获取 fiber 对象 
     const fiber = getInstance(inst);
+    // == 计算当前时间
     const eventTime = requestEventTime();
+    // == 异步加载的设置
     const lane = requestUpdateLane(fiber);
 
+    // == 创建 update 更新对象
     const update = createUpdate(eventTime, lane);
+    // == 传进来的 state ，可能是对象也可能是一个函数
     update.payload = payload;
+    // == 回调函数
     if (callback !== undefined && callback !== null) {
       if (__DEV__) {
         warnOnInvalidCallback(callback, 'setState');
@@ -206,7 +215,9 @@ const classComponentUpdater = {
       update.callback = callback;
     }
 
+    // == 将 update 结构放入队列
     enqueueUpdate(fiber, update);
+    // == 调度 Fiber 节点的更新
     scheduleUpdateOnFiber(fiber, lane, eventTime);
 
     if (__DEV__) {
@@ -560,20 +571,27 @@ function checkClassInstance(workInProgress: Fiber, ctor: any, newProps: any) {
   }
 }
 
+// == workInProgress 上采用 class 组件实例
 function adoptClassInstance(workInProgress: Fiber, instance: any): void {
+  // == class 组件上挂载 updater 为 classComponentUpdater
   instance.updater = classComponentUpdater;
+  // == workInProgress 的 stateNode 挂载此 class 组件实例
   workInProgress.stateNode = instance;
   // The instance needs access to the fiber so that it can schedule updates
+  // == 设置实例
   setInstance(instance, workInProgress);
   if (__DEV__) {
     instance._reactInternalInstance = fakeInternalInstance;
   }
 }
 
-// == 返回实例 class 组件
+// == 返回 class 组件实例
 function constructClassInstance(
+  // == 新 Fiber
   workInProgress: Fiber,
+  // == 组件 type，即为 class 函数组件本身
   ctor: any,
+  // == 新的 props
   props: any,
 ): any {
   let isLegacyContextConsumer = false;
@@ -623,6 +641,7 @@ function constructClassInstance(
     }
   }
 
+  // == 处理 context 相关
   if (typeof contextType === 'object' && contextType !== null) {
     context = readContext((contextType: any));
   } else if (!disableLegacyContext) {
@@ -656,6 +675,7 @@ function constructClassInstance(
     instance.state !== null && instance.state !== undefined
       ? instance.state
       : null);
+  // == workInProgress 上采用 class 组件实例
   adoptClassInstance(workInProgress, instance);
 
   if (__DEV__) {
@@ -747,6 +767,7 @@ function constructClassInstance(
     cacheContext(workInProgress, unmaskedContext, context);
   }
 
+  // == 返回 class 组件实例
   return instance;
 }
 
@@ -806,6 +827,7 @@ function callComponentWillReceiveProps(
 }
 
 // Invokes the mount life-cycles on a previously never rendered instance.
+// == 挂载 class 组件实例
 function mountClassInstance(
   workInProgress: Fiber,
   ctor: any,
@@ -816,14 +838,16 @@ function mountClassInstance(
     checkClassInstance(workInProgress, ctor, newProps);
   }
 
+  // == 当前 class 组件实例上的 props、state、refs 值设置
   const instance = workInProgress.stateNode;
   instance.props = newProps;
   instance.state = workInProgress.memoizedState;
   instance.refs = emptyRefsObject;
 
-  // == 初始化更新队列: FiberNode
+  // == 初始化 workInProgress 更新队列 UpdateQueue
   initializeUpdateQueue(workInProgress);
 
+  // == context 相关
   const contextType = ctor.contextType;
   if (typeof contextType === 'object' && contextType !== null) {
     instance.context = readContext(contextType);
@@ -863,9 +887,12 @@ function mountClassInstance(
     }
   }
 
+  // == 形成更新队列链表
   processUpdateQueue(workInProgress, newProps, instance, renderLanes);
+  // == instance 上挂载新的 state
   instance.state = workInProgress.memoizedState;
 
+  // == 执行 getDerivedStateFromProps 生命周期
   const getDerivedStateFromProps = ctor.getDerivedStateFromProps;
   if (typeof getDerivedStateFromProps === 'function') {
     applyDerivedStateFromProps(
@@ -897,6 +924,7 @@ function mountClassInstance(
   }
 }
 
+// == 复用挂载的 class 组件实例
 function resumeMountClassInstance(
   workInProgress: Fiber,
   ctor: any,
@@ -1031,6 +1059,7 @@ function resumeMountClassInstance(
 }
 
 // Invokes the update life-cycles and returns false if it shouldn't rerender.
+// == 更新挂载的 class 组件实例
 function updateClassInstance(
   current: Fiber,
   workInProgress: Fiber,

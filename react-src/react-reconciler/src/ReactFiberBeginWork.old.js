@@ -870,10 +870,15 @@ function updateBlock<Props, Data>(
 }
 
 function updateClassComponent(
+  // == 旧 Fiber
   current: Fiber | null,
+  // == 新 Fiber
   workInProgress: Fiber,
+  // == 组件 type
   Component: any,
+  // == 新的 props
   nextProps: any,
+  // == 调度优先级
   renderLanes: Lanes,
 ) {
   if (__DEV__) {
@@ -896,6 +901,7 @@ function updateClassComponent(
   // During mounting we don't know the child context yet as the instance doesn't exist.
   // We will invalidate the child context in finishClassComponent() right after rendering.
   let hasContext;
+  // == context 相关处理
   if (isLegacyContextProvider(Component)) {
     hasContext = true;
     pushLegacyContextProvider(workInProgress);
@@ -908,6 +914,7 @@ function updateClassComponent(
   let shouldUpdate;
   // == 不存在实例，直接创建
   if (instance === null) {
+    // == mount 阶段，标记为 Placement
     if (current !== null) {
       // A class component without an instance only mounts if it suspended
       // inside a non-concurrent tree, in an inconsistent state. We want to
@@ -919,14 +926,16 @@ function updateClassComponent(
       workInProgress.flags |= Placement;
     }
     // In the initial pass we might need to construct the instance.
-    // == 返回实例 class 组件
+    // == 返回 class 组件实例
     constructClassInstance(workInProgress, Component, nextProps);
+    // == 挂载 class 组件实例
     mountClassInstance(workInProgress, Component, nextProps, renderLanes);
     shouldUpdate = true;
   }
   // == 存在实例，可以复用
   else if (current === null) {
     // In a resume, we'll already have an instance we can reuse.
+    // == 复用挂载的 class 组件实例
     shouldUpdate = resumeMountClassInstance(
       workInProgress,
       Component,
@@ -936,6 +945,7 @@ function updateClassComponent(
   }
   // == 更新实例
   else {
+    // == 更新挂载的 class 组件实例
     shouldUpdate = updateClassInstance(
       current,
       workInProgress,
@@ -944,7 +954,7 @@ function updateClassComponent(
       renderLanes,
     );
   }
-  // == 返回下一个工作单元
+  // == 计算出下一个工作单元
   const nextUnitOfWork = finishClassComponent(
     current,
     workInProgress,
@@ -966,6 +976,7 @@ function updateClassComponent(
       didWarnAboutReassigningProps = true;
     }
   }
+  // == 返回下一个工作单元
   return nextUnitOfWork;
 }
 

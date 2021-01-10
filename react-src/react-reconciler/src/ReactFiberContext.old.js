@@ -231,7 +231,7 @@ function processChildContext(
   }
 }
 
-// == class 组件
+// == push Context Provider
 function pushContextProvider(workInProgress: Fiber): boolean {
   if (disableLegacyContext) {
     return false;
