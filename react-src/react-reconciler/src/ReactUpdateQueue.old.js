@@ -204,10 +204,12 @@ export function createUpdate(eventTime: number, lane: Lane): Update<*> {
 
     // == 更新的类型，包括UpdateState | ReplaceState | ForceUpdate | CaptureUpdate
     tag: UpdateState,
+
     // == 更新挂载的数据。不同类型组件挂载的数据不同：
     // == 对于 ClassComponent，payload 为 this.setState 的第一个传参。
     // == 对于 HostRoot，payload 为 ReactDOM.render 的第一个传参。
     payload: null,
+    
     // == 更新的回调函数。不同类型组件挂载的数据不同：
     // == 对于 ClassComponent，callback 为 this.setState 的第二个传参。
     // == 对于 HostRoot，callback 为 ReactDOM.render 的第三个传参。
@@ -241,8 +243,6 @@ export function enqueueUpdate<State>(fiber: Fiber, update: Update<State>) {
     update.next = update;
   } else {
     // == 2、非初始更新
-    //           next                                      next
-    // update --------> fiber.updateQueue.shared.pending --------->  update
     update.next = pending.next;
     pending.next = update;
   }
@@ -572,7 +572,7 @@ export function processUpdateQueue<State>(
         }
 
         // Process this update.
-        // == 2、根据 payload 获取最新的 state
+        // == 2、根据 getStateFromUpdate 通过 update.payload 获取最新的 state
         newState = getStateFromUpdate(
           // == 新 Fiber
           workInProgress,

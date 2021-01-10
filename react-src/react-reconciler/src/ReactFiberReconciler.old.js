@@ -357,8 +357,9 @@ export function updateContainer(
   // == current - 传入容器节点挂载的 FiberNode
   // == update - 根据 eventTime, lane 创建的更新对象
   // == 形成环状链表
-  //           next                                      next
-  // update --------> fiber.updateQueue.shared.pending --------->  update
+  // == const pending = current.updateQueue.shared
+  // == update.next = pending.next;
+  // == pending.next = update;
   enqueueUpdate(current, update);
   // == 执行 Fiber 节点的更新调度
   scheduleUpdateOnFiber(current, lane, eventTime);
