@@ -781,7 +781,7 @@ function completeWork(
             markUpdate(workInProgress);
           }
         } else {
-          // == 根据 type 创建 dom 实例
+          // == 根据 workInProgress 的 type 创建 dom 实例
           const instance = createInstance(
             type,
             newProps,
