@@ -273,6 +273,7 @@ export function reconcileChildren(
   }
 }
 
+// == 强制卸载 curren 并且 Reconcile
 function forceUnmountCurrentAndReconcile(
   current: Fiber,
   workInProgress: Fiber,
@@ -980,6 +981,7 @@ function updateClassComponent(
   return nextUnitOfWork;
 }
 
+// == 计算出下一个工作单元
 function finishClassComponent(
   current: Fiber | null,
   workInProgress: Fiber,
@@ -1002,6 +1004,7 @@ function finishClassComponent(
     return bailoutOnAlreadyFinishedWork(current, workInProgress, renderLanes);
   }
 
+  // == 以下节点是 shouldUpdate 阶段
   const instance = workInProgress.stateNode;
 
   // Rerender
@@ -1038,6 +1041,7 @@ function finishClassComponent(
       }
       setIsRendering(false);
     } else {
+      // == 调用 class 组件实例的 render 方法得到实际的 jsx
       nextChildren = instance.render();
     }
   }
@@ -1049,6 +1053,7 @@ function finishClassComponent(
     // the existing children. Conceptually, the normal children and the children
     // that are shown on error are two different sets, so we shouldn't reuse
     // normal children even if their identities match.
+    // == 强制重新 Reconcile，不传入 nextChildren
     forceUnmountCurrentAndReconcile(
       current,
       workInProgress,
@@ -1064,10 +1069,12 @@ function finishClassComponent(
   workInProgress.memoizedState = instance.state;
 
   // The context might have changed so we need to recalculate it.
+  // == context 相关
   if (hasContext) {
     invalidateContextProvider(workInProgress, Component, true);
   }
 
+  // == 返回 workInProgress.child
   return workInProgress.child;
 }
 
