@@ -1,7 +1,7 @@
 import React, { createElement as createElementSimple } from 'react';
 import ReactDOM from 'react-dom';
 
-// == 1. jsx 语法会被 createElementSimple 函数解析成一个对象传入 render 函数中
+/** 1. jsx 语法会被 createElementSimple 函数解析成一个对象传入 render 函数中 */
 const element1 = <h1 title="foo">Hello</h1>;
 // console.log(11111, element1);
 // {
@@ -15,7 +15,7 @@ const container = document.getElementById('root');
 ReactDOM.render(element1, container);
 
 
-// == 2. 执行 createElementSimple 函数，传入 type、props、children 之后，返回一个对象
+/** 2. 执行 createElementSimple 函数，传入 type、props、children 之后，返回一个对象 */
 const element2 = createElementSimple(
   'h1',
   { title: 'foo' },
@@ -29,11 +29,11 @@ const element2 = createElementSimple(
 //     children: "Hello"
 //   }
 // }
+/** 此结果和 JSX 解析结果相同，由此可知 JSX 的原理: 执行 createElementSimple 函数，根据 dom 树结构传入 type、props、children 属性，返回 js 对象。 */
 ReactDOM.render(element2, container);
-// == 此结果和 JSX 解析结果相同，由此可知 JSX 的原理: 执行 createElementSimple 函数，根据 dom 树结构传入 type、props、children 属性，返回 js 对象。
 
 
-// == 3. 清楚了 React.createElement 的本质之后。原生 js 模拟实现 ReactDOM.render 函数
+/** 3. 清楚了 React.createElement 的本质之后。原生 js 模拟实现 ReactDOM.render 函数 */
 const element3 = {
   type: 'h1',
   props: {

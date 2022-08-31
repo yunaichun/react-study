@@ -3,8 +3,8 @@
 // 2、返回: js 对象 - { type, props: [{ type, props, children: [] }] }
 
 
-// == 实现自己的 createElementSimple 函数
-// == 1、通过延展符使得 children 在 props 中为数组
+/** 实现自己的 createElementSimple 函数 */
+/** 1、通过延展符使得 children 在 props 中为数组 */
 export default function createElementSimple(type, props, ...children) {
   return {
     type,
@@ -19,7 +19,7 @@ export default function createElementSimple(type, props, ...children) {
   }
 }
 
-// == 2、子元素可能是 TEXT_ELEMENT
+/** 2、子元素可能是 TEXT_ELEMENT */
 function createTextElement(text) {
   return {
     type: 'TEXT_ELEMENT',
@@ -37,14 +37,14 @@ const element = (
     <b />
   </div>
 );
-// == 等价于
+/** 等价于 */
 // const element = createElementSimple(
 //   "div",
 //   { id: "foo" },
 //   createElementSimple("a", null, "bar"),
 //   createElementSimple("b")
 // );
-console.log(1111, element);
+console.log(2, element);
 // {
 //   "type": "div",
 //   "props": {
