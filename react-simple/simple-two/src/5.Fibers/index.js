@@ -36,10 +36,13 @@ let nextUnitOfWork = null;
 export default function render(jsxRes, container) {
   /** 当前工作单元: 将 nextUnitOfWork 设置为 Fiber 树的根节点 */
   nextUnitOfWork = {
-    dom: container,
     props: {
       children: [jsxRes],
     },
+    dom: container,
+    parent: null,
+    child: null,
+    sibling: null,
   };
 }
 
