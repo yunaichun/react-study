@@ -22,13 +22,14 @@ import createElementSimple from '../2.createElement';
 //   container
 // )
 // 在渲染中, 我们将创建 root Fiber 节点并将其设置为 nextUnitOfWork . 剩下的工作将在 performUnitOfWork 函数上进行. performUnitOfWork 中我们将为每个 Fiber 节点做三件事: 
-// A. 创建当前节点的 DOM 
-// B. 为元素的子节点创建 Fiber
+// A. 创建当前节点的 DOM 并添加到父节点
+// B. 为元素的子节点创建 Fiber 节点
 // C. 选择下一个工作单元
-  // C.1.【如果 Fiber 节点没有子节点, 我们将右兄弟节点作为下一个工作单元】. 例如, p 元素 Fiber 节点没有子节点, 因此我们将移至 a 元素的 Fiber 节点. 
-  // C.2.【如果 Fiber 节点既没有子节点也没有右兄弟节点, 那么我们移至父节点】. 例如, a 和 h2 元素的 Fiber 节点. 
-  // C.3.【如果父节点没有右兄弟节点, 我们会不断向上检查, 直到找到有兄弟姐妹的父节点或者直到找到根节点】. 如果到根节点, 则意味着我们已经完成了此渲染的所有工作. 
-// 该数据结构的目标之一是使查找下一个工作单元变得容易. 这就是为什么每个 Fiber 节点都链接到其第一个子节点、下一个右节点、父节点.
+    // - 首先选择子节点
+    // - 没有子节点，选择右兄弟节点
+    // - 没有右兄弟节点，回到父节点
+    // - 然后重复以上搜索，直到根节点
+// 该数据结构的目标之一是使查找下一个工作单元变得容易. 这就是为什么每个 Fiber 节点都链接到其第一个子节点、下一个右兄弟节点、父节点.
 
 /** 1. 设置工作单元 */
 let nextUnitOfWork = null;
@@ -59,9 +60,12 @@ requestIdleCallback(workLoop);
 
 /** 3. 每个工作单元 */
 function performUnitOfWork(fiber) {
+  /** 创建当前节点的 DOM 并添加到父节点 */
   if (!fiber.dom) fiber.dom = createDom(fiber);
   if (fiber.parent) fiber.parent.dom.appendChild(fiber.dom);
+  /** 为元素的子节点创建 Fiber 节点 */
   buildChildFibers(fiber);
+  /** 选择下一个工作单元 */
   return getNextFiber(fiber);
 }
 
