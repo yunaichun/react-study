@@ -25,9 +25,10 @@ import createElementSimple from '../2.createElement';
   //   )
   // }
 /** 二、解决思路 */
-// 1、在 performUnitOfWork 阶段如果遇到 fiber.type 为 function 的节点，执行 fiber.type 函数等到真实的 childern
-// 2、commitRoot 阶段添加元素: 如果父级 fiber 节点没有 dom 属性，即为函数组件，则找父级节点的父级节点
-// 3、commitRoot 阶段删除元素: 如果待移除的 fiber 节点没有 dom 属性，即为函数组件，则找待移除节点的子节点
+// 1、在 performUnitOfWork 阶段如果遇到 type 为 function 的节点，执行 type 函数拿到真实的 childern
+// 2、commitRoot 阶段添加元素：
+//   - 如果父级 fiber 节点没有 dom 属性，即为函数组件，则找父级节点的父级节点
+//   - 如果待移除的 fiber 节点没有 dom 属性，即为函数组件，则找子节点
 
 /** 1. 设置工作单元 */
 let nextUnitOfWork = null;
