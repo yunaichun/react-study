@@ -114,7 +114,7 @@ function updateDomPropps(dom, prevProps, nextProps) {
   }
 }
 
-// == 3. 每个工作单元任务
+/** 3. 每个工作单元任务 */
 function performUnitOfWork(fiber) {
   /** 创建当前节点的 DOM 并添加到父节点 */
   if (!fiber.dom) fiber.dom = createDom(fiber);
