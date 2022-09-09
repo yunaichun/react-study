@@ -1,9 +1,9 @@
 import createElementSimple from '../2.createElement';
 
 /** 一、函数组件回顾 */
-// 1、函数组件 Fiber 节点的 type 属性函数本身
-// 2、则执行此函数即 fiber.type(fiber.props) 会返回当前函数组件的实际的节点树
-// 3、假如在函数组件内部执行 useState 函数，则当执行函数组件，即 fiber.type(fiber.props) 时，则 useState 也会被执行
+// 1、函数组件 Fiber 节点的 type 属性为函数本身
+// 2、则执行此函数即 fiber.type(fiber.props) 会返回当前函数组件的实际的 jsx
+// 3、假如在函数组件内部执行 useState 函数，则当执行此函数组件时（即 fiber.type(fiber.props) 时），则 useState 也会被执行
 /** 二、useState 实现思路 */
 // 1、函数组件 Fiber 节点添加 hooks 属性
 // {
