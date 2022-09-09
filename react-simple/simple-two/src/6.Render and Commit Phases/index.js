@@ -112,11 +112,10 @@ function buildChildFibers (fiber) {
       type,
       props,
       dom: null,
-      parent: null,
+      parent: fiber,
       child: null,
       sibling: null
     };
-    newFiber.parent = fiber;
     if (index === 0) fiber.child = newFiber;
     else prevSibling.sibling = newFiber;
     prevSibling = newFiber;
