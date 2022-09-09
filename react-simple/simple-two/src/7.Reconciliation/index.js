@@ -131,6 +131,10 @@ function createDom(fiber) {
   else dom = document.createElement(type);
   
   updateDomPropps(dom, {}, props);
+  /** 并不是像之前一样添加属性，也包含修改属性 */
+  // for (let key in props) {
+  //   if (key !== 'children') dom[key] = props[key];
+  // }
   return dom;
 }
 
